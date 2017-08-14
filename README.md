@@ -24,14 +24,23 @@ The following plugins will be necessary in jenkins:
 1. Log Trigger plugin also called post build plugin
 2. Email extender plugin
 3. Env inject plugin
+4. Build timestamp plugin
 
-1. Log Trigger will be used to trigger the running of the script in case the the merge fails. The way the Log Trigger works is that it searches for a specified string and if found it basically runs a shell script.
+1. Log Trigger will be used to trigger the running of the script in case the merge fails. The way the Log Trigger works is that it searches for a specified string and if found it basically runs a shell script.
 2. The Email extender plugin will be used to send emails to certain people on failure.
 3. Env inject plugin will enable us to inject our environment variables of choice in the entire job in jenkins. Environment variables are pretty much the only ways we can communicate between shell scripts and the plugins.
+4. Build timestamp will store the build timestamp of the last successful build. 
 
 The following line will be searched in the Log Trigger plugin:
 
 `ERROR: Branch not suitable for integration as it does not merge cleanly`
 
-One important idea here is that we want to catch the Exception where the branch does not merge because of a merge conflict. The concept is similar to exception handling where we do not want to handle an exception that is has too large a scope like the class `Exception`. Reading the console output and parsing it for finding out a specific output is not definitely a clean implementation to solve this issue. However we could not find a better way to handle this.
+One important idea here is that we want to catch the Exception where the branch does not merge because of a merge conflict. The concept is similar to exception handling where we do not want to handle an exception that is has too large a scope like the class `Exception`. Reading the console output and parsing it for finding out a specific output is not definitely a clean implementation to solve this issue. However we could not find a better way to handle this, other than may be writing a brand new plugin for jenkins.
 
+There will be another log trigger that will store the build timestamp of the last successful build in a properties file whose path will be known to jenkins using the env inject plugin. Properties file are the only way we can actually inject environment variables of our choice into jenkins jobs.
+
+The python script that will run will have the following command line arguments passed to it.
+- jenkins_home
+- job_name
+
+These 2 environment variables are enough for finding out the log for the lastFailedBuild and properties file where the last successful build timestamp is stored. 
