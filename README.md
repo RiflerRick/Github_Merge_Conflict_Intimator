@@ -21,4 +21,17 @@ There are 2 github apis that can actually extract commits from a repository.
 #### Jenkins configuration
 
 The following plugins will be necessary in jenkins:
-1. 
+1. Log Trigger plugin also called post build plugin
+2. Email extender plugin
+3. Env inject plugin
+
+1. Log Trigger will be used to trigger the running of the script in case the the merge fails. The way the Log Trigger works is that it searches for a specified string and if found it basically runs a shell script.
+2. The Email extender plugin will be used to send emails to certain people on failure.
+3. Env inject plugin will enable us to inject our environment variables of choice in the entire job in jenkins. Environment variables are pretty much the only ways we can communicate between shell scripts and the plugins.
+
+The following line will be searched in the Log Trigger plugin:
+
+`ERROR: Branch not suitable for integration as it does not merge cleanly`
+
+One important idea here is that we want to catch the Exception where the branch does not merge because of a merge conflict. The concept is similar to exception handling where we do not want to handle an exception that is has too large a scope like the class `Exception`. Reading the console output and parsing it for finding out a specific output is not definitely a clean implementation to solve this issue. However we could not find a better way to handle this.
+
