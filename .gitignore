@@ -102,3 +102,6 @@ ENV/
 
 # idea
 .idea
+
+# personal access token
+github_pat_token.py
