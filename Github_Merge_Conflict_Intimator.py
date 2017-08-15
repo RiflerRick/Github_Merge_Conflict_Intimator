@@ -7,6 +7,7 @@ The script will be taking 4 command line arguments:
 - $GMCI_HOME: This environment variable will provide the file path for the gmci properties file defined in jenkins job configuration
 """
 import github_pat_token
+import dateutil, datetime
 import sys
 import os
 import traceback
@@ -86,12 +87,12 @@ def list_commits_api_call(branch_name, conflicting_filepath, timestamp):
     :param branch_name: Branch name to check for commits
     :param conflicting_filepath: The filepath for which we need to check for commits
     :param timestamp: The time since which we need to fetch for commits.
-    :return: a tuple containing the head_branch response dict and the base_branch response dict
+    :return: a tuple containing the head_branch response list and the base_branch response list
     """
     # Getting the commits for the branch to which we are merging
 
-    base_branch_response = {}
-    head_branch_response = {}
+    base_branch_response = []
+    head_branch_response = []
 
     headers = {
         "Authorization" : "token " + PAT_TOKEN
@@ -105,9 +106,9 @@ def list_commits_api_call(branch_name, conflicting_filepath, timestamp):
     try:
         r = requests.get(url, headers = headers, params = params)
         response = r.json()
-        if response.has_key("message") == False:
+        if type(response) == list:
             pass
-        else:
+        elif type(response) == dict and response.has_key("message"):
             raise Exception("API call for the following URL failed:\n{0}\nHeaders:\nsha:"
                             " {1}\npath: {2}\nsince: {3}\nERROR: {4}".format(url, branch_name,                                   conflicting_filepath, timestamp, response["message"]))
 
@@ -123,9 +124,9 @@ def list_commits_api_call(branch_name, conflicting_filepath, timestamp):
         params["sha"] = HEAD_BRANCH
         r = requests.get(url, headers=headers, params=params)
         response = r.json()
-        if response.has_key("message") == False:
+        if type(response) == list:
             pass
-        else:
+        elif type(response) == dict and response.has_key("message"):
             raise Exception("API call for the following URL failed:\n{0}\nHeaders:\nsha:"
                             " {1}\npath: {2}\nsince: {3}\nERROR: {4}".format(url, "master",
                              conflicting_filepath, timestamp, response["message"]))
@@ -140,18 +141,63 @@ def list_commits_api_call(branch_name, conflicting_filepath, timestamp):
 
     return (head_branch_response, base_branch_response)
 
+
+def get_diff(commit_url):
+    """
+    get the diff using the commit url
+
+    :param commit_url:
+    :return:
+    """
+    headers = {
+        "Authorization" : "token " + PAT_TOKEN,
+        "Accept" : "application/vnd.github.v3.diff"
+    }
+    try:
+        r = requests.get(commit_url, headers = headers)
+    except Exception:
+        exc_type, exc_val, exc_tb = sys.exc_info()
+        traceback.print_exception(exc_type, exc_val, exc_tb)
+
+    return r.text
+
+
 def parse_responses(head_branch_response, base_branch_response):
     """
-    parses the responses to get only the commits that we need
+    parses the responses to get only the information from the commits that we need.
+    In our case this information is going to be:
+    - timestamp of commit
+    - diff of the commit
+    These 2 variables will be stored in a tuple for each commit in a list of commits
 
     :param head_branch_response:
     :param base_branch_response:
     :return:
     """
+    head_branch_commits = []
+    base_branch_commits = []
+    try:
+        for commit in head_branch_response:
+            # commit is now a dictionary
+            commit_timestamp = commit["author"]["date"]
+            commit_diff = get_diff(commit["url"])
+            head_branch_commits.append((commit_timestamp, commit_diff))
+
+        for commit in base_branch_response:
+            # commit is now a dictionary
+            commit_timestamp = commit["author"]["date"]
+            commit_diff = get_diff(commit["url"])
+            base_branch_commits.append((commit_timestamp, commit_diff))
+
+    except Exception:
+        exc_type, exc_val, exc_tb = sys.exc_info()
+        traceback.print_exception(exc_type, exc_val, exc_tb)
+        sys.exit(1)
+
+    return (head_branch_commits, base_branch_commits)
 
 
-
-def get_conflicting_commit()
+def get_conflicting_commit():
 
 
 
