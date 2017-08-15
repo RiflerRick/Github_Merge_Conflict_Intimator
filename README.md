@@ -45,6 +45,18 @@ There will be another log trigger that will store the build timestamp of the las
 The python script that will run will have the following command line arguments passed to it.
 - jenkins_home
 - job_name
+- name of the branch to merge to.
+
+The log file will be in the following location:
+`${JENKINS_HOME}/jobs/${JOB_NAME}/builds/lastFailedBuild/log`
+
+The location of the properties file will be:
+`${JENKINS_HOME}/jobs/${JOB_NAME}/build_timestamp.properties`
+In jenkins this entire location will be available under the env variables
+`${BUILD_TIMESTAMP_HOME}`
+
+The branch to merge to will be available as:
+`${BRANCH_TO_MERGE_TO}`
 
 These 2 environment variables are enough for finding out the log for the lastFailedBuild and properties file where the last successful build timestamp is stored.
 
@@ -89,5 +101,6 @@ u'build_timestamp_auto_merge_github_branches_61'
 u'2017-08-15T11:58:34+0530'
 >>> 
 ```
+#### Reading the conflict content filepath from the log file
 
-
+Again this is easy as well especially with the re module of python, we can simply search for a specific line with a regex and we can find the line and if we can find the line we can easily find the filepath in the line.
