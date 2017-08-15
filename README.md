@@ -46,6 +46,7 @@ The python script that will run will have the following command line arguments p
 - jenkins_home
 - job_name
 - name of the branch to merge to.
+- gmci properties home
 
 The log file will be in the following location:
 `${JENKINS_HOME}/jobs/${JOB_NAME}/builds/lastFailedBuild/log`
