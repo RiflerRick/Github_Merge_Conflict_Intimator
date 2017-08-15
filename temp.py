@@ -1,10 +1,12 @@
 from unidiff import PatchSet
 import urllib2
+import github_pat_token
 
-url = "https://api.github.com/repos/RiflerRick/BB_MCS_Test/commits/20f4c4b5f886f5ad506a37b8553399d51ef5e9ad"
+url = "https://api.github.com/repos/BigBasket/BigBasket/commits/d25e5ee955daf14b1ae2a657375fa3a8e320649e"
 
 headers = {
-    "Accept" : "application/vnd.github.v3.diff"
+    "Accept" : "application/vnd.github.v3.diff",
+    "Authorization" : "token " + github_pat_token.PAT_TOKEN
 }
 
 # unfortunately requests is not helping because the documentation of the unidiff module is actully
@@ -14,13 +16,18 @@ print "printing for urllib2"
 
 req_object = urllib2.Request(url, headers=headers)
 diff = urllib2.urlopen(req_object)
+print type(diff)
 patches = PatchSet(diff, 'utf-8')
 
 print "patch len: {}".format(len(patches))
 
-# this is how we check for the source and target diffs and if we find that we are good to go.
+for patch in patches:
+    print type(patch[0])
+    print patch[0]
+    print "patch: {}".format(patch[0].source_start)
 
-print patches[0][0].source_start
-print patches[0][0].source_length
-print patches[0][0].target_start
-print patches[0][0].target_length
+
+# print patches[0][0].source_start
+# print patches[0][0].source_length
+# print patches[0][0].target_start
+# print patches[0][0].target_length

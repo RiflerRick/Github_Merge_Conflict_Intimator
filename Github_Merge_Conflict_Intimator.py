@@ -13,7 +13,8 @@ import os
 import traceback
 import configparser
 import re
-import requests
+import requests, urllib2
+from unidiff import PatchSet
 
 HEAD_BRANCH = "master"
 PAT_TOKEN = github_pat_token.PAT_TOKEN
@@ -144,7 +145,8 @@ def list_commits_api_call(branch_name, conflicting_filepath, timestamp):
 
 def get_diff(commit_url):
     """
-    get the diff using the commit url
+    For getting the diff we will have to use urllib2 for compatibility of that library with unidiff
+    which will be used for parsing diff
 
     :param commit_url:
     :return:
@@ -154,12 +156,13 @@ def get_diff(commit_url):
         "Accept" : "application/vnd.github.v3.diff"
     }
     try:
-        r = requests.get(commit_url, headers = headers)
+        req_object = urllib2.Request(commit_url, headers=headers)
+        diff = urllib2.urlopen(req_object)
+        # here diff is of type instance and that is exactly what we need for unidiff compatibility
+        return diff
     except Exception:
         exc_type, exc_val, exc_tb = sys.exc_info()
         traceback.print_exception(exc_type, exc_val, exc_tb)
-
-    return r.text
 
 
 def parse_responses(head_branch_response, base_branch_response):
@@ -206,12 +209,18 @@ def parse_responses(head_branch_response, base_branch_response):
 def compare_diffs(diff1, diff2):
     """
     compares diffs and returns True if editing has been done in the same line of the file
-    else returns False
+    else returns False.
+
+    This is really the core of this entire script. We will use a library called unidiff to compare
+    diffs and find out whether diff 1 and diff 2 have anything in common
 
     :param diff1:
     :param diff2:
     :return:
     """
+    patches1 = PatchSet(diff1, 'utf-8')
+    patches2 = PatchSet(diff2, 'utf-8')
+
 
 
 def get_conflicting_commit(head_commits, base_commits):
@@ -245,6 +254,7 @@ def get_conflicting_commit(head_commits, base_commits):
         if compare_diffs(head_diff, base_diff):
             conflict_authors["head_commit"] = (head[3], head[2])
             conflict_authors["base_commit"] = (base[3], base[2])
+            return conflict_authors
 
         else:
             if head_timestamp > base_timestamp:

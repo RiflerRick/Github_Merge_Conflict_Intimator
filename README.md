@@ -150,4 +150,16 @@ fi
 
 ```
 
-The tool sed is used here in order to actually append, delete and insert to files from the shell itself. 
+The tool sed is used here in order to actually append, delete and insert to files from the shell itself.
+
+#### Comparing commit by commit
+
+Comparison commit by commit would be done in the following way. 
+There would be pointers used to point to the head of each commit list
+
+Now we compare the diffs of the commits, if they do not match we check the timestamp of the commits, if commit A occured after commit B then the pointer of commit B is increased. This way we would always 
+check the commits chronologically.
+
+#### Comparing diffs
+
+Initially I was of the impression that the hunk portion actually could give us the idea of what exactly changed in the file. However that is not the case. Looks like we may have to go for a line by line comparison which would make things absolutely insane.
