@@ -7,7 +7,7 @@ The script will be taking 4 command line arguments:
 - $GMCI_HOME: This environment variable will provide the file path for the gmci properties file defined in jenkins job configuration
 """
 import github_pat_token
-import dateutil, datetime
+import dateutil.parser as dtparser, datetime
 import sys
 import os
 import traceback
@@ -181,13 +181,19 @@ def parse_responses(head_branch_response, base_branch_response):
             # commit is now a dictionary
             commit_timestamp = commit["author"]["date"]
             commit_diff = get_diff(commit["url"])
-            head_branch_commits.append((commit_timestamp, commit_diff))
+            commit_author_email = commit(["author"]["email"])
+            commit_author_name = commit(["author"]["name"])
+            head_branch_commits.append((commit_timestamp, commit_diff, commit_author_email,
+                                        commit_author_name))
 
         for commit in base_branch_response:
             # commit is now a dictionary
             commit_timestamp = commit["author"]["date"]
             commit_diff = get_diff(commit["url"])
-            base_branch_commits.append((commit_timestamp, commit_diff))
+            commit_author_email = commit(["author"]["email"])
+            commit_author_name = commit(["author"]["name"])
+            base_branch_commits.append((commit_timestamp, commit_diff, commit_author_email,
+                                        commit_author_name))
 
     except Exception:
         exc_type, exc_val, exc_tb = sys.exc_info()
@@ -197,8 +203,56 @@ def parse_responses(head_branch_response, base_branch_response):
     return (head_branch_commits, base_branch_commits)
 
 
-def get_conflicting_commit():
+def compare_diffs(diff1, diff2):
+    """
+    compares diffs and returns True if editing has been done in the same line of the file
+    else returns False
 
+    :param diff1:
+    :param diff2:
+    :return:
+    """
+
+
+def get_conflicting_commit(head_commits, base_commits):
+    """
+    get the conflicting email and author name from both head branch commits and base branch commits
+    Recall that each commit block is a tuple containing (commit_timestamp, commit_diff,
+     commit_author_email, commit_author_name) in the same order.
+
+    :param head_branch_commits:
+    :param base_branch_commits:
+    :return: A dictionary containing the head commit author name and email and the base commit
+            author name and email
+    """
+    pointer_head= 0
+    pointer_base= 0
+
+    conflict_authors = {
+        "head_commit" : (),
+        "base_commit": ()
+    }
+
+    while pointer_head <= len(head_commits) and pointer_base <= len(base_commits):
+        head = head_commits[pointer_head]
+        base = base_commits[pointer_base]
+
+        head_timestamp = dtparser.parse(head[0])
+        head_diff = head[1]
+
+        base_timestamp = dtparser.parse(base[0])
+        base_diff = base[1]
+        if compare_diffs(head_diff, base_diff):
+            conflict_authors["head_commit"] = (head[3], head[2])
+            conflict_authors["base_commit"] = (base[3], base[2])
+
+        else:
+            if head_timestamp > base_timestamp:
+                # Basic idea if head_timestamp is greater it means it occured afterwards
+                # and base_commit occured earlier, so pointer_base should increase
+                pointer_base += 1
+            else:
+                pointer_head += 1
 
 
 
