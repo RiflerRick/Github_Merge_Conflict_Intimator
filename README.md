@@ -162,4 +162,4 @@ check the commits chronologically.
 
 #### Comparing diffs
 
-Initially I was of the impression that the hunk portion actually could give us the idea of what exactly changed in the file. However that is not the case. Looks like we may have to go for a line by line comparison which would make things absolutely insane.
+Initially I was of the impression that the hunk portion in the diff actually could give us the idea of what exactly changed in the file. However that is not the case. Looks like we may have to go for a line by line comparison which would make things absolutely insane.

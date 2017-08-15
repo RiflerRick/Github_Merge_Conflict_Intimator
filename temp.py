@@ -22,10 +22,14 @@ patches = PatchSet(diff, 'utf-8')
 print "patch len: {}".format(len(patches))
 
 for patch in patches:
-    print type(patch[0])
-    print patch[0]
-    print "patch: {}".format(patch[0].source_start)
-
+    # print type(patch)
+    print "hunk"
+    for hunk in patch:
+        for line in hunk:
+            if line.is_added:
+                print "added line: {}".format(line)
+            elif line.is_removed:
+                print "removed line: {}".format(line)
 
 # print patches[0][0].source_start
 # print patches[0][0].source_length
