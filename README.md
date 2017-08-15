@@ -163,3 +163,5 @@ check the commits chronologically.
 #### Comparing diffs
 
 Initially I was of the impression that the hunk portion in the diff actually could give us the idea of what exactly changed in the file. However that is not the case. Looks like we may have to go for a line by line comparison which would make things absolutely insane.
+
+Although it is essentially a line by line comparison the idea would be that if a line is added by someone, is it removed by the other guy and vice versa, if so there is a merge conflict, if not its okay. This is a complicated problem when it comes to literally checking patch by patch. The current agorithm follows that for a given patch, we check the hunk of the patch, the number of lines that are inserted and the number of lines deleted. 

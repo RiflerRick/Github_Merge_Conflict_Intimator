@@ -242,7 +242,7 @@ def get_conflicting_commit(head_commits, base_commits):
         "base_commit": ()
     }
 
-    while pointer_head <= len(head_commits) and pointer_base <= len(base_commits):
+    while pointer_head < len(head_commits) and pointer_base < len(base_commits):
         head = head_commits[pointer_head]
         base = base_commits[pointer_base]
 
