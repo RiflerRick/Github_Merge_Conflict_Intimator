@@ -242,28 +242,19 @@ def get_conflicting_commit(head_commits, base_commits):
         "base_commit": ()
     }
 
-    while pointer_head < len(head_commits) and pointer_base < len(base_commits):
-        head = head_commits[pointer_head]
-        base = base_commits[pointer_base]
+    for pointer_head in range(len(head_commits)):
 
-        head_timestamp = dtparser.parse(head[0])
-        head_diff = head[1]
+        for pointer_base in range(len(base_commits)):
+            head = head_commits[pointer_head]
+            base = base_commits[pointer_base]
 
-        base_timestamp = dtparser.parse(base[0])
-        base_diff = base[1]
-        if compare_diffs(head_diff, base_diff):
-            conflict_authors["head_commit"] = (head[3], head[2])
-            conflict_authors["base_commit"] = (base[3], base[2])
-            return conflict_authors
+            head_timestamp = dtparser.parse(head[0])
+            head_diff = head[1]
 
-        else:
-            if head_timestamp > base_timestamp:
-                # Basic idea if head_timestamp is greater it means it occured afterwards
-                # and base_commit occured earlier, so pointer_base should increase
-                pointer_base += 1
-            else:
-                pointer_head += 1
-
-
-
+            base_timestamp = dtparser.parse(base[0])
+            base_diff = base[1]
+            if compare_diffs(head_diff, base_diff):
+                conflict_authors["head_commit"] = (head[3], head[2])
+                conflict_authors["base_commit"] = (base[3], base[2])
+                return conflict_authors
 

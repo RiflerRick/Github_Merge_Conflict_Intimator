@@ -154,11 +154,7 @@ The tool sed is used here in order to actually append, delete and insert to file
 
 #### Comparing commit by commit
 
-Comparison commit by commit would be done in the following way. 
-There would be pointers used to point to the head of each commit list
-
-Now we compare the diffs of the commits, if they do not match we check the timestamp of the commits, if commit A occured after commit B then the pointer of commit B is increased. This way we would always 
-check the commits chronologically.
+It looks like the only way of comparing these commits for finding conflicts is actually comparing them in O(n**2). We cannot effectively find commits otherwise.
 
 #### Comparing diffs
 
