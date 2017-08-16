@@ -294,6 +294,9 @@ def update_properties(all_authors, conflicting_authors):
     head_all_authors = all_authors["head"]
     base_all_authors = all_authors["base"]
 
+    print "head_all_authors:"
+    print head_all_authors
+
     if conflicting_authors["head_commit"] != ():
         head_conflicting_authors_name = conflicting_authors["head_commit"][0]
         head_conflicting_authors_email = conflicting_authors["head_commit"][1]
@@ -304,6 +307,19 @@ def update_properties(all_authors, conflicting_authors):
     config = configparser.ConfigParser()
     try:
         config.read(GMCI_HOME)
+        # initializing all values
+        config.set(u"CULPRITS", "HEAD_BRANCH_CULPRIT_EMAIL", "")
+        config.set(u"CULPRITS", "HEAD_BRANCH_CULPRIT_NAME", "")
+
+        config.set(u"CULPRITS", "BASE_BRANCH_CULPRIT_NAME", "")
+        config.set(u"CULPRITS", "BASE_BRANCH_CULPRIT_EMAIL", "")
+
+        config.set(u"CULPRITS", "HEAD_BRANCH_ALL_CULPRITS_NAMES", "")
+        config.set(u"CULPRITS", "HEAD_BRANCH_ALL_CULPRITS_EMAILS", "")
+
+        config.set(u"CULPRITS", "BASE_BRANCH_ALL_CULPRITS_NAMES", "")
+        config.set(u"CULPRITS", "BASE_BRANCH_ALL_CULPRITS_EMAILS", "")
+
         if conflicting_authors["head_commit"] != ():
             config.set(u"CULPRITS", "HEAD_BRANCH_CULPRIT_NAME", head_conflicting_authors_name)
             config.set(u"CULPRITS", "HEAD_BRANCH_CULPRIT_EMAIL", head_conflicting_authors_email)
@@ -311,17 +327,21 @@ def update_properties(all_authors, conflicting_authors):
             config.set(u"CULPRITS", "BASE_BRANCH_CULPRIT_NAME", base_conflicting_authors_name)
             config.set(u"CULPRITS", "BASE_BRANCH_CULPRIT_EMAIL", base_conflicting_authors_email)
 
+        val_1 = ""
+        val_2 = ""
         for author in head_all_authors:
-            val = author[0] + ", "
-            config.set(u"CULPRITS", "HEAD_BRANCH_ALL_CULPRITS_NAMES", val)
-            val = author[1] + ", "
-            config.set(u"CULPRITS", "HEAD_BRANCH_ALL_CULPRITS_EMAILS", val)
+            val_1 = val_1 + author[0] + ", "
+            config.set(u"CULPRITS", "HEAD_BRANCH_ALL_CULPRITS_NAMES", val_1)
+            val_2 = val_2 + author[1] + ", "
+            config.set(u"CULPRITS", "HEAD_BRANCH_ALL_CULPRITS_EMAILS", val_2)
 
+        val_1 = ""
+        val_2 = ""
         for author in base_all_authors:
-            val = author[0] + ", "
-            config.set(u"CULPRITS", "BASE_BRANCH_ALL_CULPRITS_NAMES", val)
-            val = author[1] + ", "
-            config.set(u"CULPRITS", "BASE_BRANCH_ALL_CULPRITS_EMAILS", val)
+            val_1 = val_1 + author[0] + ", "
+            config.set(u"CULPRITS", "BASE_BRANCH_ALL_CULPRITS_NAMES", val_1)
+            val_2 = val_2 + author[1] + ", "
+            config.set(u"CULPRITS", "BASE_BRANCH_ALL_CULPRITS_EMAILS", val_2)
 
         f = open(GMCI_HOME, 'w')
         config.write(f)
@@ -384,6 +404,11 @@ head_branch_response, base_branch_response = list_commits_api_call(BRANCH_NAME, 
 head_branch_commits, base_branch_commits = parse_responses(head_branch_response, base_branch_response)
 
 conflicting_authors = get_conflicting_commit(head_branch_commits, base_branch_commits)
+print "printing head branch commits:"
+print head_branch_commits
+
+print "printing base branch commits:"
+print base_branch_commits
 
 all_authors = get_all_authors(head_branch_commits, base_branch_commits)
 
