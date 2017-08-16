@@ -58,21 +58,21 @@ def get_build_timestamp():
     return config[u"LAST_SUCCESSFUL_BUILD_TIMESTAMP"][build_timestamp_key]
 
 
-def get_conflicting_filepath():
+def get_conflicting_filepaths():
     """
     get the filepath of the conflicting file from the console log file of jenkins
 
     :return:
     """
-    filepath = ""
+    filepaths = []
     try:
         file = open(LOG_FILE_PATH, "r")
         error_line = ""
         for line in file:
             if re.match(ERROR_LINE_REGEX, line):
                 error_line = line
+                filepaths.append(error_line.split(' ')[-1][:-1])
 
-        filepath = error_line.split(' ')[-1][:-1]
 
     except Exception:
         exc_type, exc_val, exc_tb = sys.exc_info()
@@ -80,10 +80,10 @@ def get_conflicting_filepath():
         # this is essential so that
         sys.exit(1)
 
-    return filepath
+    return filepaths
 
 
-def list_commits_api_call(branch_name, conflicting_filepath, timestamp):
+def list_commits_api_call(branch_name, conflicting_filepaths, timestamp):
     """
     calls the github list commits api to list all commits of a particular branch, of a particular
     file and since a particular timestamp
@@ -101,48 +101,55 @@ def list_commits_api_call(branch_name, conflicting_filepath, timestamp):
     headers = {
         "Authorization" : "token " + PAT_TOKEN
     }
-    params = {
-        "sha" : branch_name,
-        "path" : conflicting_filepath,
-        "since" : str(timestamp)
-    }
-    url = os.path.join("https://api.github.com", "repos", OWNER_NAME, REPO_NAME, "commits")
-    try:
-        r = requests.get(url, headers = headers, params = params)
-        response = r.json()
-        if type(response) == list:
-            pass
-        elif type(response) == dict and response.has_key("message"):
-            raise Exception("API call for the following URL failed:\n{0}\nHeaders:\nsha:"
-                            " {1}\npath: {2}\nsince: {3}\nERROR: {4}".format(url, branch_name,                                   conflicting_filepath, timestamp, response["message"]))
+    for path in conflicting_filepaths:
+        params = {
+            "sha" : branch_name,
+            "path" : path,
+            "since" : str(timestamp)
+        }
+        url = os.path.join("https://api.github.com", "repos", OWNER_NAME, REPO_NAME, "commits")
+        try:
+            r = requests.get(url, headers = headers, params = params)
+            response = r.json()
+            if type(response) == list:
+                pass
+            elif type(response) == dict and response.has_key("message"):
+                raise Exception("API call for the following URL failed:\n{0}\nHeaders:\nsha:"
+                        " {1}\npath: {2}\nsince: {3}\nERROR: {4}".format(url, branch_name,
+                         path, timestamp, response["message"]))
 
-        base_branch_response = response
+            base_branch_response.append(response)
 
-    except Exception as e:
-        exc_type, exc_val, exc_tb = sys.exc_info()
-        traceback.print_exception(exc_type, exc_val, exc_tb)
-        print str(e)
-        sys.exit(1)
+        except Exception as e:
+            exc_type, exc_val, exc_tb = sys.exc_info()
+            traceback.print_exception(exc_type, exc_val, exc_tb)
+            print str(e)
+            sys.exit(1)
 
-    try:
-        params["sha"] = HEAD_BRANCH
-        r = requests.get(url, headers=headers, params=params)
-        response = r.json()
-        if type(response) == list:
-            pass
-        elif type(response) == dict and response.has_key("message"):
-            raise Exception("API call for the following URL failed:\n{0}\nHeaders:\nsha:"
-                            " {1}\npath: {2}\nsince: {3}\nERROR: {4}".format(url, "master",
-                             conflicting_filepath, timestamp, response["message"]))
+        try :
+            params["sha"] = HEAD_BRANCH
+            r = requests.get(url, headers=headers, params=params)
+            response = r.json()
+            if type(response) == list:
+                pass
+            elif type(response) == dict and response.has_key("message"):
+                raise Exception("API call for the following URL failed:\n{0}\nHeaders:\nsha:"
+                                " {1}\npath: {2}\nsince: {3}\nERROR: {4}".format(url, "master",
+                                 path, timestamp, response["message"]))
 
-        head_branch_response = response
+            head_branch_response.append(response)
 
-    except Exception as e:
-        exc_type, exc_val, exc_tb = sys.exc_info()
-        traceback.print_exception(exc_type, exc_val, exc_tb)
-        print str(e)
-        sys.exit(1)
+        except Exception as e:
+            exc_type, exc_val, exc_tb = sys.exc_info()
+            traceback.print_exception(exc_type, exc_val, exc_tb)
+            print str(e)
+            sys.exit(1)
 
+
+    print "head branch response: "
+    print head_branch_response
+    print "base branch response: "
+    print base_branch_response
     return (head_branch_response, base_branch_response)
 
 
@@ -183,23 +190,24 @@ def parse_responses(head_branch_response, base_branch_response):
     head_branch_commits = []
     base_branch_commits = []
     try:
-        for commit in head_branch_response:
-            # commit is now a dictionary
-            commit_timestamp = commit["commit"]["author"]["date"]
-            commit_diff = get_diff(commit["url"])
-            commit_author_email = commit["commit"]["author"]["email"]
-            commit_author_name = commit["commit"]["author"]["name"]
-            head_branch_commits.append((commit_timestamp, commit_diff, commit_author_email,
-                                        commit_author_name))
-
-        for commit in base_branch_response:
-            # commit is now a dictionary
-            commit_timestamp = commit["commit"]["author"]["date"]
-            commit_diff = get_diff(commit["url"])
-            commit_author_email = commit["commit"]["author"]["email"]
-            commit_author_name = commit["commit"]["author"]["name"]
-            base_branch_commits.append((commit_timestamp, commit_diff, commit_author_email,
-                                        commit_author_name))
+        for response in head_branch_response:
+            for commit in response:
+                # commit is now a dictionary
+                commit_timestamp = commit["commit"]["author"]["date"]
+                commit_diff = get_diff(commit["url"])
+                commit_author_email = commit["commit"]["author"]["email"]
+                commit_author_name = commit["commit"]["author"]["name"]
+                head_branch_commits.append((commit_timestamp, commit_diff, commit_author_email,
+                                            commit_author_name))
+        for response in base_branch_response:
+            for commit in response:
+                # commit is now a dictionary
+                commit_timestamp = commit["commit"]["author"]["date"]
+                commit_diff = get_diff(commit["url"])
+                commit_author_email = commit["commit"]["author"]["email"]
+                commit_author_name = commit["commit"]["author"]["name"]
+                base_branch_commits.append((commit_timestamp, commit_diff, commit_author_email,
+                                            commit_author_name))
 
     except Exception:
         exc_type, exc_val, exc_tb = sys.exc_info()
@@ -397,16 +405,18 @@ os.chdir(path)
 subprocess.call(["git", "checkout", "origin/test_branch_20"])
 subprocess.call(["git", "merge", "origin/master"])
 p = subprocess.Popen(["git", "diff"], stdout=subprocess.PIPE)
-output, err = p.communicate(b"input")
+diff_output, err = p.communicate()
+print "diff"
+print diff_output
 
 build_timestamp = get_build_timestamp()
-conflicting_filepath = get_conflicting_filepath()
+conflicting_filepaths = get_conflicting_filepaths()
 
 print "branch: {}".format(BRANCH_NAME)
 print "build_timestamp: {}".format(build_timestamp)
-print "conflicting_filepath: {}".format(conflicting_filepath)
+print "conflicting_filepath: {}".format(str(conflicting_filepaths))
 
-head_branch_response, base_branch_response = list_commits_api_call(BRANCH_NAME, conflicting_filepath,
+head_branch_response, base_branch_response = list_commits_api_call(BRANCH_NAME, conflicting_filepaths,
                                                                    build_timestamp)
 
 head_branch_commits, base_branch_commits = parse_responses(head_branch_response, base_branch_response)
