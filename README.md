@@ -154,10 +154,12 @@ The tool sed is used here in order to actually append, delete and insert to file
 
 #### Comparing commit by commit
 
-It looks like the only way of comparing these commits for finding conflicts is actually comparing them in O(n**2). We cannot effectively find commits otherwise.
+It looks like the only way of comparing these commits for finding conflicts is actually comparing them in O(n**2). The conflicting commit actually can be between a massive gap of time.
 
 #### Comparing diffs
 
 Initially I was of the impression that the hunk portion in the diff actually could give us the idea of what exactly changed in the file. However that is not the case. Looks like we may have to go for a line by line comparison which would make things absolutely insane.
 
 Although it is essentially a line by line comparison the idea would be that if a line is added by someone, is it removed by the other guy and vice versa, if so there is a merge conflict, if not its okay. This is a complicated problem when it comes to literally checking patch by patch. The current agorithm follows that for a given patch, we check the hunk of the patch, the number of lines that are inserted and the number of lines deleted. 
+
+**NOTE**: There will be no way of actually giving a clue as to who are the actual culprits of the conflict. The best we can do is give a probable set of commit authors whose commits conflict and a list of all authors who committed in the file where the conflict happened.

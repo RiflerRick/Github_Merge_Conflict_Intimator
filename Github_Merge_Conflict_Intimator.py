@@ -221,6 +221,83 @@ def compare_diffs(diff1, diff2):
     patches1 = PatchSet(diff1, 'utf-8')
     patches2 = PatchSet(diff2, 'utf-8')
 
+    addition_diff1 = set()
+    deletion_diff1 = set()
+    addition_diff2 = set()
+    deletion_diff2 = set()
+
+    for patch in patches1:
+        for hunk in patch:
+            for line in hunk:
+                if line.is_added:
+                    addition_diff1.add(line)
+                elif line.is_removed:
+                    deletion_diff1.add(line)
+
+    for patch in patches1:
+        for hunk in patch:
+            for line in hunk:
+                if line.is_added:
+                    addition_diff2.add(line)
+                elif line.is_removed:
+                    deletion_diff2.add(line)
+
+    if addition_diff1.intersection(deletion_diff2) or addition_diff2.intersection(deletion_diff1):
+        return True
+    else:
+        return False
+
+
+def get_all_authors(head_commits, base_commits):
+    """
+    gets all commit authors in both the base and head branch
+
+    :param head_commits: list
+    :param base_commits: list
+    :return:
+    """
+    all_authors = {
+        "head" : [],
+        "base" : []
+    }
+    for commit in head_commits:
+        all_authors["head"].append(commit["commit"]["author"]["name"], commit["commit"]["author"][
+            "email"])
+
+    for commit in base_commits:
+        all_authors["base"].append(commit["commit"]["author"]["name"], commit["commit"]["author"][
+            "email"])
+
+    return all_authors
+
+
+def update_properties(all_authors, conflicting_authors):
+    """
+    update the gmci properties file
+    The properties to be updated are the following:
+    [CULPRITS]
+    HEAD_BRANCH_CULPRIT_NAME=""
+    HEAD_BRANCH_CULPRIT_EMAIL=""
+    BASE_BRANCH_CULPRIT_NAME=""
+    BASE_BRANCH_CULPRIT_EMAIL=""
+    HEAD_BRANCH_ALL_CULPRITS_NAMES=""
+    HEAD_BRANCH_ALL_CULPRITS_EMAILS=""
+    BASE_BRANCH_ALL_CULPRITS_NAMES=""
+    BASE_BRANCH_ALL_CULPRITS_EMAILS=""
+
+    :param all_authors:
+    :param conflicting_authors:
+    :return:
+    """
+    head_all_authors = all_authors["head"]
+    base_all_authors = all_authors["base"]
+
+    head_conflicting_authors_name = conflicting_authors["head_commit"][0]
+    head_conflicting_authors_email = conflicting_authors["head_commit"][1]
+    base_conflicting_authors_name = conflicting_authors["base_commit"][0]
+    base_conflicting_authors_email = conflicting_authors["base_commit"][1]
+
+
 
 
 def get_conflicting_commit(head_commits, base_commits):
@@ -254,7 +331,25 @@ def get_conflicting_commit(head_commits, base_commits):
             base_timestamp = dtparser.parse(base[0])
             base_diff = base[1]
             if compare_diffs(head_diff, base_diff):
+                # head[3]: author_name, head[2]: author email
                 conflict_authors["head_commit"] = (head[3], head[2])
                 conflict_authors["base_commit"] = (base[3], base[2])
                 return conflict_authors
+
+
+build_timestamp = get_build_timestamp()
+conflicting_filepath = get_conflicting_filepath()
+
+head_branch_response, base_branch_response = list_commits_api_call(BRANCH_NAME, conflicting_filepath,
+                                                                   build_timestamp)
+
+head_branch_commits, base_branch_commits = parse_responses(head_branch_response, base_branch_response)
+
+conflicting_authors = get_conflicting_commit(head_branch_commits, base_branch_commits)
+
+all_authors = get_all_authors(head_branch_commits, base_branch_commits)
+
+
+
+
 
