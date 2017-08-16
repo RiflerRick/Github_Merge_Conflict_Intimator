@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /home/bigbasket/.virtualenvs/githubMCI/bin/python
 """
 The script will be taking 4 command line arguments:
 - $JENKINS_HOME: This environment variable will simply provide the path of the jenkins home
@@ -20,12 +20,13 @@ HEAD_BRANCH = "master"
 PAT_TOKEN = github_pat_token.PAT_TOKEN
 
 assert PAT_TOKEN
-assert len(sys.argv) == 4
+#print len(sys.argv)
+assert len(sys.argv) == 5
 
-JENKINS_HOME = sys.argv[0]
-JOB_NAME = sys.argv[1]
-BRANCH_NAME = sys.argv[2]
-GMCI_HOME = sys.argv[3]
+JENKINS_HOME = sys.argv[1]
+JOB_NAME = sys.argv[2]
+BRANCH_NAME = sys.argv[3]
+GMCI_HOME = sys.argv[4]
 
 # -----------------------------------REPOSITORY CONFIGs------------------------------------
 OWNER_NAME = "RiflerRick"
@@ -44,15 +45,16 @@ def get_build_timestamp():
     """
     config = configparser.ConfigParser()
     try:
-        config.read(LOG_FILE_PATH)
-        build_timestamp_key = config["LAST_SUCCESSFUL_BUILD_TIMESTAMP"].keys()[-1]
+        config.read(GMCI_HOME)
+        build_timestamp_key = config[u"LAST_SUCCESSFUL_BUILD_TIMESTAMP"].keys()[0]
     except Exception:
         exc_type, exc_val, exc_tb = sys.exc_info()
         traceback.print_exception(exc_type, exc_val, exc_tb)
         # this is essential so that
         sys.exit(1)
 
-    return config["LAST_SUCCESSFUL_BUILD_TIMESTAMP"][build_timestamp_key]
+    print "return build timestamp: {}".format(config[u"LAST_SUCCESSFUL_BUILD_TIMESTAMP"][build_timestamp_key])
+    return config[u"LAST_SUCCESSFUL_BUILD_TIMESTAMP"][build_timestamp_key]
 
 
 def get_conflicting_filepath():
@@ -69,7 +71,7 @@ def get_conflicting_filepath():
             if re.match(ERROR_LINE_REGEX, line):
                 error_line = line
 
-        filepath = error_line.split(' ')[-1]
+        filepath = error_line.split(' ')[-1][:-1]
 
     except Exception:
         exc_type, exc_val, exc_tb = sys.exc_info()
@@ -101,7 +103,7 @@ def list_commits_api_call(branch_name, conflicting_filepath, timestamp):
     params = {
         "sha" : branch_name,
         "path" : conflicting_filepath,
-        "since" : timestamp
+        "since" : str(timestamp)
     }
     url = os.path.join("https://api.github.com", "repos", OWNER_NAME, REPO_NAME, "commits")
     try:
@@ -182,19 +184,19 @@ def parse_responses(head_branch_response, base_branch_response):
     try:
         for commit in head_branch_response:
             # commit is now a dictionary
-            commit_timestamp = commit["author"]["date"]
+            commit_timestamp = commit["commit"]["author"]["date"]
             commit_diff = get_diff(commit["url"])
-            commit_author_email = commit(["author"]["email"])
-            commit_author_name = commit(["author"]["name"])
+            commit_author_email = commit["commit"]["author"]["email"]
+            commit_author_name = commit["commit"]["author"]["name"]
             head_branch_commits.append((commit_timestamp, commit_diff, commit_author_email,
                                         commit_author_name))
 
         for commit in base_branch_response:
             # commit is now a dictionary
-            commit_timestamp = commit["author"]["date"]
+            commit_timestamp = commit["commit"]["author"]["date"]
             commit_diff = get_diff(commit["url"])
-            commit_author_email = commit(["author"]["email"])
-            commit_author_name = commit(["author"]["name"])
+            commit_author_email = commit["commit"]["author"]["email"]
+            commit_author_name = commit["commit"]["author"]["name"]
             base_branch_commits.append((commit_timestamp, commit_diff, commit_author_email,
                                         commit_author_name))
 
@@ -261,12 +263,12 @@ def get_all_authors(head_commits, base_commits):
         "base" : []
     }
     for commit in head_commits:
-        all_authors["head"].append(commit["commit"]["author"]["name"], commit["commit"]["author"][
-            "email"])
+        t = (commit[3], commit[2])
+        all_authors["head"].append(t)
 
     for commit in base_commits:
-        all_authors["base"].append(commit["commit"]["author"]["name"], commit["commit"]["author"][
-            "email"])
+        t = (commit[3], commit[2])
+        all_authors["base"].append(t)
 
     return all_authors
 
@@ -292,12 +294,42 @@ def update_properties(all_authors, conflicting_authors):
     head_all_authors = all_authors["head"]
     base_all_authors = all_authors["base"]
 
-    head_conflicting_authors_name = conflicting_authors["head_commit"][0]
-    head_conflicting_authors_email = conflicting_authors["head_commit"][1]
-    base_conflicting_authors_name = conflicting_authors["base_commit"][0]
-    base_conflicting_authors_email = conflicting_authors["base_commit"][1]
+    if conflicting_authors["head_commit"] != ():
+        head_conflicting_authors_name = conflicting_authors["head_commit"][0]
+        head_conflicting_authors_email = conflicting_authors["head_commit"][1]
+    if conflicting_authors["base_commit"] != ():
+        base_conflicting_authors_name = conflicting_authors["base_commit"][0]
+        base_conflicting_authors_email = conflicting_authors["base_commit"][1]
 
+    config = configparser.ConfigParser()
+    try:
+        config.read(GMCI_HOME)
+        if conflicting_authors["head_commit"] != ():
+            config.set(u"CULPRITS", "HEAD_BRANCH_CULPRIT_NAME", head_conflicting_authors_name)
+            config.set(u"CULPRITS", "HEAD_BRANCH_CULPRIT_EMAIL", head_conflicting_authors_email)
+        if conflicting_authors["base_commit"] != ():
+            config.set(u"CULPRITS", "BASE_BRANCH_CULPRIT_NAME", base_conflicting_authors_name)
+            config.set(u"CULPRITS", "BASE_BRANCH_CULPRIT_EMAIL", base_conflicting_authors_email)
 
+        for author in head_all_authors:
+            val = author[0] + ", "
+            config.set(u"CULPRITS", "HEAD_BRANCH_ALL_CULPRITS_NAMES", val)
+            val = author[1] + ", "
+            config.set(u"CULPRITS", "HEAD_BRANCH_ALL_CULPRITS_EMAILS", val)
+
+        for author in base_all_authors:
+            val = author[0] + ", "
+            config.set(u"CULPRITS", "BASE_BRANCH_ALL_CULPRITS_NAMES", val)
+            val = author[1] + ", "
+            config.set(u"CULPRITS", "BASE_BRANCH_ALL_CULPRITS_EMAILS", val)
+
+        f = open(GMCI_HOME, 'w')
+        config.write(f)
+
+    except Exception:
+        exc_type, exc_val, exc_tb = sys.exc_info()
+        traceback.print_exception(exc_type, exc_val, exc_tb)
+        sys.exit(1)
 
 
 def get_conflicting_commit(head_commits, base_commits):
@@ -336,9 +368,15 @@ def get_conflicting_commit(head_commits, base_commits):
                 conflict_authors["base_commit"] = (base[3], base[2])
                 return conflict_authors
 
+    return conflict_authors
+
 
 build_timestamp = get_build_timestamp()
 conflicting_filepath = get_conflicting_filepath()
+
+print "branch: {}".format(BRANCH_NAME)
+print "build_timestamp: {}".format(build_timestamp)
+print "conflicting_filepath: {}".format(conflicting_filepath)
 
 head_branch_response, base_branch_response = list_commits_api_call(BRANCH_NAME, conflicting_filepath,
                                                                    build_timestamp)
@@ -349,7 +387,6 @@ conflicting_authors = get_conflicting_commit(head_branch_commits, base_branch_co
 
 all_authors = get_all_authors(head_branch_commits, base_branch_commits)
 
-
-
+update_properties(all_authors, conflicting_authors)
 
 
