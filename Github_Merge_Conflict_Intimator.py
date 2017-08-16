@@ -145,11 +145,6 @@ def list_commits_api_call(branch_name, conflicting_filepaths, timestamp):
             print str(e)
             sys.exit(1)
 
-
-    print "head branch response: "
-    print head_branch_response
-    print "base branch response: "
-    print base_branch_response
     return (head_branch_response, base_branch_response)
 
 
@@ -213,6 +208,12 @@ def parse_responses(head_branch_response, base_branch_response):
         exc_type, exc_val, exc_tb = sys.exc_info()
         traceback.print_exception(exc_type, exc_val, exc_tb)
         sys.exit(1)
+
+    print "head branch commits: "
+    print head_branch_commits
+
+    print "base branch commits: "
+    print base_branch_commits
 
     return (head_branch_commits, base_branch_commits)
 
@@ -303,9 +304,6 @@ def update_properties(all_authors):
     head_all_authors = all_authors["head"]
     base_all_authors = all_authors["base"]
 
-    print "head_all_authors:"
-    print head_all_authors
-
     # if conflicting_authors["head_commit"] != ():
     #     head_conflicting_authors_name = conflicting_authors["head_commit"][0]
     #     head_conflicting_authors_email = conflicting_authors["head_commit"][1]
@@ -355,6 +353,7 @@ def update_properties(all_authors):
 
         f = open(GMCI_HOME, 'w')
         config.write(f)
+        f.close()
 
     except Exception:
         exc_type, exc_val, exc_tb = sys.exc_info()
@@ -409,6 +408,12 @@ diff_output, err = p.communicate()
 print "diff"
 print diff_output
 
+diff_file_path = os.path.join(JENKINS_HOME, "jobs", JOB_NAME, "diff.html")
+diff_html_file = open(diff_file_path, "w+")
+diff_html_file.write("<h3>DIFF</h3>\n")
+diff_html_file.write(diff_output)
+diff_html_file.close()
+
 build_timestamp = get_build_timestamp()
 conflicting_filepaths = get_conflicting_filepaths()
 
@@ -418,7 +423,6 @@ print "conflicting_filepath: {}".format(str(conflicting_filepaths))
 
 head_branch_response, base_branch_response = list_commits_api_call(BRANCH_NAME, conflicting_filepaths,
                                                                    build_timestamp)
-
 head_branch_commits, base_branch_commits = parse_responses(head_branch_response, base_branch_response)
 
 all_authors = get_all_authors(head_branch_commits, base_branch_commits)
