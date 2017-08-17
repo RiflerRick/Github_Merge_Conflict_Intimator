@@ -221,6 +221,18 @@ def get_all_authors(head_commits, base_commits):
     return all_authors
 
 
+def wrap_html_anchor_tag(value, url):
+    """
+    wraps the value in an html anchor tag
+
+    :param value:
+    :param url:
+    :return:
+    """
+    value = '<a href="' + url + '">' + value + '</a>'
+    return value
+
+
 def update_properties(all_authors, head_info, base_info):
     """
     update the gmci properties file
@@ -255,6 +267,7 @@ def update_properties(all_authors, head_info, base_info):
     """
     head_all_authors = all_authors["head"]
     base_all_authors = all_authors["base"]
+    generic_commit_url = os.path.join("https://github.com", OWNER_NAME, REPO_NAME, "commit")
 
     try:
         config = configparser.ConfigParser()
@@ -279,6 +292,7 @@ def update_properties(all_authors, head_info, base_info):
         head_author_names = ""
         head_author_emails = ""
         head_author_commits = ""
+
         base_author_names = ""
         base_author_emails = ""
         base_author_commits = ""
@@ -291,7 +305,8 @@ def update_properties(all_authors, head_info, base_info):
             head_author_emails = head_author_emails + email + ", "
 
         for commit in head_info["commits"]:
-            head_author_commits = head_author_commits + commit + ", "
+            url = os.path.join(generic_commit_url, commit)
+            head_author_commits = head_author_commits + wrap_html_anchor_tag(commit, url) + ", "
 
         # ------------BASE---------------------------------------------
         for name in base_info["names"]:
@@ -301,7 +316,8 @@ def update_properties(all_authors, head_info, base_info):
             base_author_emails = base_author_emails + email + ", "
 
         for commit in base_info["commits"]:
-            base_author_commits = base_author_commits + commit + ", "
+            url = os.path.join(generic_commit_url, commit)
+            base_author_commits = base_author_commits + wrap_html_anchor_tag(commit, url) + ", "
 
         config.set(u"CULPRITS", "HEAD_BRANCH_CULPRIT_NAMES", head_author_names)
         config.set(u"CULPRITS", "HEAD_BRANCH_CULPRIT_EMAILS", head_author_emails)
@@ -309,7 +325,7 @@ def update_properties(all_authors, head_info, base_info):
 
         config.set(u"CULPRITS", "BASE_BRANCH_CULPRIT_NAMES", base_author_names)
         config.set(u"CULPRITS", "BASE_BRANCH_CULPRIT_EMAILS", base_author_emails)
-        config.set(u"CULPRITS", "BASE_BRANCH_CULPRIT_COMMITS", head_author_commits)
+        config.set(u"CULPRITS", "BASE_BRANCH_CULPRIT_COMMITS", base_author_commits)
 
         val_1 = ""
         val_2 = ""
@@ -354,6 +370,7 @@ def parse_diff_output(annotated_info):
     for line in annotated_info:
         commit  = line.split("\t")[0]
         if commit ==  non_committed_commit_sha:
+            print "found non committed sha"
             total_non_committed_commits += 1
             continue
         elif total_non_committed_commits%3 == 1:
@@ -363,6 +380,10 @@ def parse_diff_output(annotated_info):
             # head found
             head_conflict_commits.append(commit)
 
+    print "head_commits------------------------------------------------------"
+    print head_conflict_commits
+    print "base commits------------------------------------------------------"
+    print base_conflict_commits
     return head_conflict_commits, base_conflict_commits
 
 
@@ -426,6 +447,16 @@ path = "/var/lib/jenkins/workspace/auto_merge_github_branches/"
 os.chdir(path)
 subprocess.call(["git", "checkout", "origin/test_branch_20"])
 subprocess.call(["git", "merge", "origin/master"])
+diff = subprocess.Popen(["git", "diff"], stdout=subprocess.PIPE)
+diff_output, err = diff.communicate()
+
+diff_output_filepath = os.path.join(JENKINS_HOME, "jobs", JOB_NAME, "diff.html")
+f = open(diff_output_filepath, "w+")
+f.write('<textarea rows="30" cols="70" disabled="false" style="background-color:black; color:white;">\n')
+f.write(diff_output)
+f.write("</textarea>\n")
+f.close()
+
 head_author_names = []
 base_author_names = []
 head_emails = []
@@ -441,14 +472,29 @@ for filepath in conflicting_filepaths:
     for commit in base_commits:
         base_commits_all_files.append(commit)
 
+# print "head_commits_all_files:------------------------------------"
+# print head_commits_all_files
+# print "base_commits_all_files:------------------------------------"
+# print base_commits_all_files
+# OKAY TILL HERE
+
 head_info, base_info = get_commit_authors(head_commits_all_files, base_commits_all_files)
 
-head_branch_response, base_branch_response = list_commits_api_call(BRANCH_NAME, conflicting_filepaths,
-                                                                   build_timestamp)
-head_branch_commits, base_branch_commits = parse_responses(head_branch_response, base_branch_response)
+# head_branch_response, base_branch_response = list_commits_api_call(BRANCH_NAME,
+#                                                                    conflicting_filepaths,
+#                                                                    build_timestamp)
+# head_branch_commits, base_branch_commits = parse_responses(head_branch_response, base_branch_response)
+#
+# all_authors = get_all_authors(head_branch_commits, base_branch_commits)
 
-all_authors = get_all_authors(head_branch_commits, base_branch_commits)
-
+# print "head_info----------------------------------------------"
+# print head_info
+# print "base_info----------------------------------------------"
+# print base_info
+all_authors = {
+        "head" : [],
+        "base" : []
+    }
 update_properties(all_authors, head_info, base_info)
 
 
