@@ -387,6 +387,65 @@ def parse_diff_output(annotated_info):
     return head_conflict_commits, base_conflict_commits
 
 
+def update_email_content(head_info, base_info):
+    """
+    update the file for email content
+    head_info = {
+        "names" : [],
+        "emails" : [],
+        "commits" : []
+    }
+    base_info = {
+        "names" : [],
+        "emails" : [],
+        "commits" : []
+    }
+    :param head_info:
+    :param base_info:
+    :return:
+    """
+    generic_commit_url = os.path.join("https://github.com", OWNER_NAME, REPO_NAME, "commit")
+
+    email_content_template_path = os.path.join(JENKINS_HOME, "jobs", JOB_NAME,
+                                               "email_content_template.html")
+    f = open(email_content_template_path, "w")
+    background_image_filepath = "https://drive.google.com/file/d/0B92RYFTIbXsHaWFnaHhYbXhhSjg/vie" \
+                                "w?usp=sharing"
+    f.write('<style>body {background-image: url("' + background_image_filepath + '");background-repeat:'
+                                                                                 ' no-repeat;'
+            ' background-position: center center; background-attachment: fixed;}</style>')
+    f.write('<body background="' + background_image_filepath + '"><br><h2>Merge Failed</h2>')
+    f.write('<p style="color:blue">The following people are causing merge conflicts</p>')
+    f.write('<b style="color:red">Head:</b>')
+    author_names = ""
+    for name in head_info["names"]:
+        author_names = author_names + name + ", "
+    f.write('<p>' + author_names + '</p>')
+
+    f.write('<b style="color:red">Base:</b>')
+    author_names = ""
+    for name in base_info["names"]:
+        author_names = author_names + name + ", "
+    f.write('<p>' + author_names + '</p>')
+
+    f.write('<p style="color:blue">for the following commits:</p>')
+    f.write('<b style="color:red">Head:</b>')
+    author_commits = ""
+    for commit in head_info["commits"]:
+        url = os.path.join(generic_commit_url, commit)
+        author_commits = author_commits + wrap_html_anchor_tag(commit, url) + ", "
+    f.write('<p>' + author_commits + '</p>')
+
+    f.write('<b style="color:red">Base:</b>')
+    author_commits = ""
+    for commit in base_info["commits"]:
+        url = os.path.join(generic_commit_url, commit)
+        author_commits = author_commits + wrap_html_anchor_tag(commit, url) + ", "
+    f.write('<p>' + author_commits + '</p>')
+
+    f.write('</body><b>Diff</b><br><br>')
+
+
 def get_commit_authors(head_commits, base_commits):
     """
     gets the commit authors and emails using api calls
@@ -496,6 +555,7 @@ all_authors = {
         "base" : []
     }
 update_properties(all_authors, head_info, base_info)
+update_email_content(head_info, base_info)
 
 
 

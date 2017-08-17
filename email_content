@@ -1,0 +1,17 @@
+<h2>Merge Failed</h2>
+<body>
+<p style="color:blue">The following people are causing merge conflicts</p><br>
+    <b style="color:red">Head:</b><br>
+    $head_branch_culprit_names <br>
+    <b style="color:red">Base:</b> <br>
+    $base_branch_culprit_names <br>
+
+<p style="color:blue">for the following commits:</p> <br>
+    <b style="color:red">Head:</b><br>
+    $head_branch_culprit_commits <br>
+    <b style="color:red">Base:</b><br>
+    $base_branch_culprit_commits <br>
+</body>
+
+<b>Diff</b><br><br>
+${FILE,path="$JENKINS_HOME/jobs/$JOB_NAME/diff.html"}
