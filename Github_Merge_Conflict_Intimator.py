@@ -430,11 +430,18 @@ head_author_names = []
 base_author_names = []
 head_emails = []
 base_emails = []
+head_commits_all_files = []
+base_commits_all_files = []
 for filepath in conflicting_filepaths:
     p = subprocess.Popen(["git", "annotate", filepath], stdout=subprocess.PIPE)
     annotated_info, err = p.communicate()
     head_commits, base_commits = parse_diff_output(annotated_info)
-    head_info, base_info = get_commit_authors(head_commits, base_commits)
+    for commit in head_commits:
+        head_commits_all_files.append(commit)
+    for commit in base_commits:
+        base_commits_all_files.append(commit)
+
+head_info, base_info = get_commit_authors(head_commits_all_files, base_commits_all_files)
 
 head_branch_response, base_branch_response = list_commits_api_call(BRANCH_NAME, conflicting_filepaths,
                                                                    build_timestamp)
