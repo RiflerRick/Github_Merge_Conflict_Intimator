@@ -416,27 +416,27 @@ def update_email_content(head_names_set, head_emails_set, base_names_set, base_e
             ' background-position: center center; background-attachment: fixed;}</style>')
     f.write('<body background="' + background_image_filepath + '"><br><h2>Merge Failed</h2>')
     f.write('<p style="color:blue">The following people are causing merge conflicts</p>')
-    f.write('<b style="color:red">Head:</b>')
+    f.write('<b style="color:red">Incoming:</b>')
     author_names = ""
     for name in head_names_set:
         author_names = author_names + name + ", "
     f.write('<p>' + author_names + '</p>')
 
-    f.write('<b style="color:red">Base:</b>')
+    f.write('<b style="color:red">Current:</b>')
     author_names = ""
     for name in base_names_set:
         author_names = author_names + name + ", "
     f.write('<p>' + author_names + '</p>')
 
     f.write('<p style="color:blue">for the following commits:</p>')
-    f.write('<b style="color:red">Head:</b>')
+    f.write('<b style="color:red">Incoming:</b>')
     author_commits = ""
     for commit in head_info["commits"]:
         url = os.path.join(generic_commit_url, commit)
         author_commits = author_commits + wrap_html_anchor_tag(commit, url) + ", "
     f.write('<p>' + author_commits + '</p>')
 
-    f.write('<b style="color:red">Base:</b>')
+    f.write('<b style="color:red">Current:</b>')
     author_commits = ""
     for commit in base_info["commits"]:
         url = os.path.join(generic_commit_url, commit)
