@@ -221,7 +221,7 @@ def get_all_authors(head_commits, base_commits):
     return all_authors
 
 
-def update_properties(all_authors):
+def update_properties(all_authors, head_info, base_info):
     """
     update the gmci properties file
     The properties to be updated are the following:
@@ -235,30 +235,38 @@ def update_properties(all_authors):
     BASE_BRANCH_ALL_CULPRITS_NAMES=""
     BASE_BRANCH_ALL_CULPRITS_EMAILS=""
 
+    The structure of the head_info and base_info parameters are:
+    head_info = {
+        "names" : [],
+        "emails" : [],
+        "commits" : []
+    }
+    base_info = {
+        "names" : [],
+        "emails" : [],
+        "commits" : []
+    }
+
     :param all_authors:
     :param conflicting_authors:
+    :param head_info: info on conflicting commits in head
+    :param base_info: info on conflicting commits in base
     :return:
     """
     head_all_authors = all_authors["head"]
     base_all_authors = all_authors["base"]
 
-    # if conflicting_authors["head_commit"] != ():
-    #     head_conflicting_authors_name = conflicting_authors["head_commit"][0]
-    #     head_conflicting_authors_email = conflicting_authors["head_commit"][1]
-    # if conflicting_authors["base_commit"] != ():
-    #     base_conflicting_authors_name = conflicting_authors["base_commit"][0]
-    #     base_conflicting_authors_email = conflicting_authors["base_commit"][1]
-
-
     try:
         config = configparser.ConfigParser()
         config.read(GMCI_HOME)
         # initializing all values
-        # config.set(u"CULPRITS", "HEAD_BRANCH_CULPRIT_EMAIL", "")
-        # config.set(u"CULPRITS", "HEAD_BRANCH_CULPRIT_NAME", "")
-        #
-        # config.set(u"CULPRITS", "BASE_BRANCH_CULPRIT_NAME", "")
-        # config.set(u"CULPRITS", "BASE_BRANCH_CULPRIT_EMAIL", "")
+        config.set(u"CULPRITS", "HEAD_BRANCH_CULPRIT_EMAIL", "")
+        config.set(u"CULPRITS", "HEAD_BRANCH_CULPRIT_NAME", "")
+        config.set(u"CULPRITS", "HEAD_BRANCH_CULPRIT_COMMITS", "")
+
+        config.set(u"CULPRITS", "BASE_BRANCH_CULPRIT_NAME", "")
+        config.set(u"CULPRITS", "BASE_BRANCH_CULPRIT_EMAIL", "")
+        config.set(u"CULPRITS", "BASE_BRANCH_CULPRIT_COMMITS", "")
 
         config.set(u"CULPRITS", "HEAD_BRANCH_ALL_CULPRITS_NAMES", "")
         config.set(u"CULPRITS", "HEAD_BRANCH_ALL_CULPRITS_EMAILS", "")
@@ -266,28 +274,60 @@ def update_properties(all_authors):
         config.set(u"CULPRITS", "BASE_BRANCH_ALL_CULPRITS_NAMES", "")
         config.set(u"CULPRITS", "BASE_BRANCH_ALL_CULPRITS_EMAILS", "")
 
+
         # if conflicting_authors["head_commit"] != ():
-        #     config.set(u"CULPRITS", "HEAD_BRANCH_CULPRIT_NAME", head_conflicting_authors_name)
-        #     config.set(u"CULPRITS", "HEAD_BRANCH_CULPRIT_EMAIL", head_conflicting_authors_email)
-        # if conflicting_authors["base_commit"] != ():
-        #     config.set(u"CULPRITS", "BASE_BRANCH_CULPRIT_NAME", base_conflicting_authors_name)
-        #     config.set(u"CULPRITS", "BASE_BRANCH_CULPRIT_EMAIL", base_conflicting_authors_email)
+        head_author_names = ""
+        head_author_emails = ""
+        head_author_commits = ""
+        base_author_names = ""
+        base_author_emails = ""
+        base_author_commits = ""
+
+        # -----------HEAD---------------------------------------------
+        for name in head_info["names"]:
+            head_author_names = head_author_names + name + ", "
+
+        for email in head_info["emails"]:
+            head_author_emails = head_author_emails + email + ", "
+
+        for commit in head_info["commits"]:
+            head_author_commits = head_author_commits + commit + ", "
+
+        # ------------BASE---------------------------------------------
+        for name in base_info["names"]:
+            base_author_names = base_author_names + name + ", "
+
+        for email in base_info["emails"]:
+            base_author_emails = base_author_emails + email + ", "
+
+        for commit in base_info["commits"]:
+            base_author_commits = base_author_commits + commit + ", "
+
+        config.set(u"CULPRITS", "HEAD_BRANCH_CULPRIT_NAME", head_author_names)
+        config.set(u"CULPRITS", "HEAD_BRANCH_CULPRIT_EMAIL", head_author_emails)
+        config.set(u"CULPRITS", "HEAD_BRANCH_CULPRIT_COMMITS", head_author_emails)
+
+        config.set(u"CULPRITS", "BASE_BRANCH_CULPRIT_NAME", base_author_names)
+        config.set(u"CULPRITS", "BASE_BRANCH_CULPRIT_EMAIL", base_author_emails)
+        config.set(u"CULPRITS", "BASE_BRANCH_CULPRIT_COMMITS", head_author_emails)
 
         val_1 = ""
         val_2 = ""
         for author in head_all_authors:
             val_1 = val_1 + author[0] + ", "
-            config.set(u"CULPRITS", "HEAD_BRANCH_ALL_CULPRITS_NAMES", val_1)
             val_2 = val_2 + author[1] + ", "
-            config.set(u"CULPRITS", "HEAD_BRANCH_ALL_CULPRITS_EMAILS", val_2)
+
+        config.set(u"CULPRITS", "HEAD_BRANCH_ALL_CULPRITS_NAMES", val_1)
+        config.set(u"CULPRITS", "HEAD_BRANCH_ALL_CULPRITS_EMAILS", val_2)
 
         val_1 = ""
         val_2 = ""
         for author in base_all_authors:
             val_1 = val_1 + author[0] + ", "
-            config.set(u"CULPRITS", "BASE_BRANCH_ALL_CULPRITS_NAMES", val_1)
             val_2 = val_2 + author[1] + ", "
-            config.set(u"CULPRITS", "BASE_BRANCH_ALL_CULPRITS_EMAILS", val_2)
+
+        config.set(u"CULPRITS", "BASE_BRANCH_ALL_CULPRITS_NAMES", val_1)
+        config.set(u"CULPRITS", "BASE_BRANCH_ALL_CULPRITS_EMAILS", val_2)
 
         f = open(GMCI_HOME, 'w')
         config.write(f)
@@ -378,6 +418,10 @@ def get_commit_authors(head_commits, base_commits):
 build_timestamp = get_build_timestamp()
 conflicting_filepaths = get_conflicting_filepaths()
 
+print "branch: {}".format(BRANCH_NAME)
+print "build_timestamp: {}".format(build_timestamp)
+print "conflicting_filepath: {}".format(str(conflicting_filepaths))
+
 path = "/var/lib/jenkins/workspace/auto_merge_github_branches/"
 os.chdir(path)
 subprocess.call(["git", "checkout", "origin/test_branch_20"])
@@ -392,18 +436,13 @@ for filepath in conflicting_filepaths:
     head_commits, base_commits = parse_diff_output(annotated_info)
     head_info, base_info = get_commit_authors(head_commits, base_commits)
 
-
-print "branch: {}".format(BRANCH_NAME)
-print "build_timestamp: {}".format(build_timestamp)
-print "conflicting_filepath: {}".format(str(conflicting_filepaths))
-
 head_branch_response, base_branch_response = list_commits_api_call(BRANCH_NAME, conflicting_filepaths,
                                                                    build_timestamp)
 head_branch_commits, base_branch_commits = parse_responses(head_branch_response, base_branch_response)
 
 all_authors = get_all_authors(head_branch_commits, base_branch_commits)
 
-update_properties(all_authors)
+update_properties(all_authors, head_info, base_info)
 
 
 
