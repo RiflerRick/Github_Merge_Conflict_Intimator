@@ -409,8 +409,8 @@ def update_email_content(head_info, base_info):
     email_content_template_path = os.path.join(JENKINS_HOME, "jobs", JOB_NAME,
                                                "email_content_template.html")
     f = open(email_content_template_path, "w")
-    background_image_filepath = "https://drive.google.com/file/d/0B92RYFTIbXsHaWFnaHhYbXhhSjg/vie" \
-                                "w?usp=sharing"
+    background_image_filepath = \
+        "https://raw.githubusercontent.com/RiflerRick/Github_Merge_Conflict_Intimator/master/git_logo_bg.jpg"
     f.write('<style>body {background-image: url("' + background_image_filepath + '");background-repeat:'
                                                                                  ' no-repeat;'
             ' background-position: center center; background-attachment: fixed;}</style>')
