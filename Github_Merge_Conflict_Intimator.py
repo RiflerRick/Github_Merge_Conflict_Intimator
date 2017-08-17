@@ -148,28 +148,6 @@ def list_commits_api_call(branch_name, conflicting_filepaths, timestamp):
     return (head_branch_response, base_branch_response)
 
 
-def get_diff(commit_url):
-    """
-    For getting the diff we will have to use urllib2 for compatibility of that library with unidiff
-    which will be used for parsing diff
-
-    :param commit_url:
-    :return:
-    """
-    headers = {
-        "Authorization" : "token " + PAT_TOKEN,
-        "Accept" : "application/vnd.github.v3.diff"
-    }
-    try:
-        req_object = urllib2.Request(commit_url, headers=headers)
-        diff = urllib2.urlopen(req_object)
-        # here diff is of type instance and that is exactly what we need for unidiff compatibility
-        return diff
-    except Exception:
-        exc_type, exc_val, exc_tb = sys.exc_info()
-        traceback.print_exception(exc_type, exc_val, exc_tb)
-
-
 def parse_responses(head_branch_response, base_branch_response):
     """
     parses the responses to get only the information from the commits that we need.
@@ -218,48 +196,6 @@ def parse_responses(head_branch_response, base_branch_response):
     print base_branch_commits
 
     return (head_branch_commits, base_branch_commits)
-
-
-def compare_diffs(diff1, diff2):
-    """
-    compares diffs and returns True if editing has been done in the same line of the file
-    else returns False.
-
-    This is really the core of this entire script. We will use a library called unidiff to compare
-    diffs and find out whether diff 1 and diff 2 have anything in common
-
-    :param diff1:
-    :param diff2:
-    :return:
-    """
-    patches1 = PatchSet(diff1, 'utf-8')
-    patches2 = PatchSet(diff2, 'utf-8')
-
-    addition_diff1 = set()
-    deletion_diff1 = set()
-    addition_diff2 = set()
-    deletion_diff2 = set()
-
-    for patch in patches1:
-        for hunk in patch:
-            for line in hunk:
-                if line.is_added:
-                    addition_diff1.add(line)
-                elif line.is_removed:
-                    deletion_diff1.add(line)
-
-    for patch in patches1:
-        for hunk in patch:
-            for line in hunk:
-                if line.is_added:
-                    addition_diff2.add(line)
-                elif line.is_removed:
-                    deletion_diff2.add(line)
-
-    if addition_diff1.intersection(deletion_diff2) or addition_diff2.intersection(deletion_diff1):
-        return True
-    else:
-        return False
 
 
 def get_all_authors(head_commits, base_commits):
@@ -361,45 +297,6 @@ def update_properties(all_authors):
         exc_type, exc_val, exc_tb = sys.exc_info()
         traceback.print_exception(exc_type, exc_val, exc_tb)
         sys.exit(1)
-
-
-def get_conflicting_commit(head_commits, base_commits):
-    """
-    get the conflicting email and author name from both head branch commits and base branch commits
-    Recall that each commit block is a tuple containing (commit_timestamp, commit_diff,
-     commit_author_email, commit_author_name) in the same order.
-
-    :param head_branch_commits:
-    :param base_branch_commits:
-    :return: A dictionary containing the head commit author name and email and the base commit
-            author name and email
-    """
-    pointer_head= 0
-    pointer_base= 0
-
-    conflict_authors = {
-        "head_commit" : (),
-        "base_commit": ()
-    }
-
-    for pointer_head in range(len(head_commits)):
-
-        for pointer_base in range(len(base_commits)):
-            head = head_commits[pointer_head]
-            base = base_commits[pointer_base]
-
-            head_timestamp = dtparser.parse(head[0])
-            head_diff = head[1]
-
-            base_timestamp = dtparser.parse(base[0])
-            base_diff = base[1]
-            if compare_diffs(head_diff, base_diff):
-                # head[3]: author_name, head[2]: author email
-                conflict_authors["head_commit"] = (head[3], head[2])
-                conflict_authors["base_commit"] = (base[3], base[2])
-                return conflict_authors
-
-    return conflict_authors
 
 
 def parse_diff_output(annotated_info):
