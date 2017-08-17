@@ -387,7 +387,7 @@ def parse_diff_output(annotated_info):
     return head_conflict_commits, base_conflict_commits
 
 
-def update_email_content(head_info, base_info):
+def update_email_content(head_names_set, head_emails_set, base_names_set, base_emails_set, head_info, base_info):
     """
     update the file for email content
     head_info = {
@@ -418,13 +418,13 @@ def update_email_content(head_info, base_info):
     f.write('<p style="color:blue">The following people are causing merge conflicts</p>')
     f.write('<b style="color:red">Head:</b>')
     author_names = ""
-    for name in head_info["names"]:
+    for name in head_names_set:
         author_names = author_names + name + ", "
     f.write('<p>' + author_names + '</p>')
 
     f.write('<b style="color:red">Base:</b>')
     author_names = ""
-    for name in base_info["names"]:
+    for name in base_names_set:
         author_names = author_names + name + ", "
     f.write('<p>' + author_names + '</p>')
 
@@ -554,8 +554,20 @@ all_authors = {
         "head" : [],
         "base" : []
     }
+head_names_set = set()
+head_emails_set = set()
+base_names_set = set()
+base_emails_set = set()
+
+for name in head_info["names"]:
+    head_names_set.add(name)
+for name in base_info["names"]:
+    base_names_set.add(name)
+for email in head_info["emails"]:
+    head_emails_set.add(email)
+for email in base_info["emails"]:
+    base_emails_set.add(email)
+
 update_properties(all_authors, head_info, base_info)
-update_email_content(head_info, base_info)
-
-
-
+update_email_content(head_names_set, head_emails_set, base_names_set, base_emails_set, head_info,
+                     base_info)
