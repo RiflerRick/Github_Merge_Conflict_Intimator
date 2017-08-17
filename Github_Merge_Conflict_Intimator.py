@@ -260,12 +260,12 @@ def update_properties(all_authors, head_info, base_info):
         config = configparser.ConfigParser()
         config.read(GMCI_HOME)
         # initializing all values
-        config.set(u"CULPRITS", "HEAD_BRANCH_CULPRIT_EMAIL", "")
-        config.set(u"CULPRITS", "HEAD_BRANCH_CULPRIT_NAME", "")
+        config.set(u"CULPRITS", "HEAD_BRANCH_CULPRIT_EMAILS", "")
+        config.set(u"CULPRITS", "HEAD_BRANCH_CULPRIT_NAMES", "")
         config.set(u"CULPRITS", "HEAD_BRANCH_CULPRIT_COMMITS", "")
 
-        config.set(u"CULPRITS", "BASE_BRANCH_CULPRIT_NAME", "")
-        config.set(u"CULPRITS", "BASE_BRANCH_CULPRIT_EMAIL", "")
+        config.set(u"CULPRITS", "BASE_BRANCH_CULPRIT_NAMES", "")
+        config.set(u"CULPRITS", "BASE_BRANCH_CULPRIT_EMAILS", "")
         config.set(u"CULPRITS", "BASE_BRANCH_CULPRIT_COMMITS", "")
 
         config.set(u"CULPRITS", "HEAD_BRANCH_ALL_CULPRITS_NAMES", "")
@@ -303,13 +303,13 @@ def update_properties(all_authors, head_info, base_info):
         for commit in base_info["commits"]:
             base_author_commits = base_author_commits + commit + ", "
 
-        config.set(u"CULPRITS", "HEAD_BRANCH_CULPRIT_NAME", head_author_names)
-        config.set(u"CULPRITS", "HEAD_BRANCH_CULPRIT_EMAIL", head_author_emails)
-        config.set(u"CULPRITS", "HEAD_BRANCH_CULPRIT_COMMITS", head_author_emails)
+        config.set(u"CULPRITS", "HEAD_BRANCH_CULPRIT_NAMES", head_author_names)
+        config.set(u"CULPRITS", "HEAD_BRANCH_CULPRIT_EMAILS", head_author_emails)
+        config.set(u"CULPRITS", "HEAD_BRANCH_CULPRIT_COMMITS", head_author_commits)
 
-        config.set(u"CULPRITS", "BASE_BRANCH_CULPRIT_NAME", base_author_names)
-        config.set(u"CULPRITS", "BASE_BRANCH_CULPRIT_EMAIL", base_author_emails)
-        config.set(u"CULPRITS", "BASE_BRANCH_CULPRIT_COMMITS", head_author_emails)
+        config.set(u"CULPRITS", "BASE_BRANCH_CULPRIT_NAMES", base_author_names)
+        config.set(u"CULPRITS", "BASE_BRANCH_CULPRIT_EMAILS", base_author_emails)
+        config.set(u"CULPRITS", "BASE_BRANCH_CULPRIT_COMMITS", head_author_commits)
 
         val_1 = ""
         val_2 = ""
