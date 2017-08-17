@@ -189,7 +189,8 @@ def parse_responses(head_branch_response, base_branch_response):
             for commit in response:
                 # commit is now a dictionary
                 commit_timestamp = commit["commit"]["author"]["date"]
-                commit_diff = get_diff(commit["url"])
+                # commit_diff = get_diff(commit["url"])
+                commit_diff = ""
                 commit_author_email = commit["commit"]["author"]["email"]
                 commit_author_name = commit["commit"]["author"]["name"]
                 head_branch_commits.append((commit_timestamp, commit_diff, commit_author_email,
@@ -198,7 +199,8 @@ def parse_responses(head_branch_response, base_branch_response):
             for commit in response:
                 # commit is now a dictionary
                 commit_timestamp = commit["commit"]["author"]["date"]
-                commit_diff = get_diff(commit["url"])
+                # commit_diff = get_diff(commit["url"])
+                commit_diff = ""
                 commit_author_email = commit["commit"]["author"]["email"]
                 commit_author_name = commit["commit"]["author"]["name"]
                 base_branch_commits.append((commit_timestamp, commit_diff, commit_author_email,
@@ -399,23 +401,100 @@ def get_conflicting_commit(head_commits, base_commits):
 
     return conflict_authors
 
+
+def parse_diff_output(annotated_info):
+    """
+    parses the annotated_info for commits and returns the head and base commits
+
+    :param annotated_info:
+    :return:
+    """
+    non_committed_commit_sha = "00000000"
+    annotated_info = annotated_info.split("\n")
+    total_non_committed_commits = 0
+    head_conflict_commits = []
+    base_conflict_commits = []
+    for line in annotated_info:
+        commit  = line.split("\t")[0]
+        if commit ==  non_committed_commit_sha:
+            total_non_committed_commits += 1
+            continue
+        elif total_non_committed_commits%3 == 1:
+            # base found
+            base_conflict_commits.append(commit)
+        elif total_non_committed_commits%3 == 2:
+            # head found
+            head_conflict_commits.append(commit)
+
+    return head_conflict_commits, base_conflict_commits
+
+
+def get_commit_authors(head_commits, base_commits):
+    """
+    gets the commit authors and emails using api calls
+
+    :param head_commits:
+    :param base_commits:
+    :return:
+    """
+    headers = {
+        "Authorization" : "token " + PAT_TOKEN
+    }
+    head_info = {
+        "names" : [],
+        "emails" : [],
+        "commits" : []
+    }
+    base_info = {
+        "names" : [],
+        "emails" : [],
+        "commits" : []
+    }
+
+    try:
+        for commit in head_commits:
+            url = os.path.join("https://api.github.com", "repos", OWNER_NAME, REPO_NAME, "commits",
+                               commit)
+            r = requests.get(url, headers=headers)
+            response = r.json()
+            head_info["names"].append(response["commit"]["author"]["name"])
+            head_info["emails"].append(response["commit"]["author"]["email"])
+            head_info["commits"].append(commit)
+
+        for commit in base_commits:
+            url = os.path.join("https://api.github.com", "repos", OWNER_NAME, REPO_NAME, "commits",
+                               commit)
+            r = requests.get(url, headers=headers)
+            response = r.json()
+            base_info["names"].append(response["commit"]["author"]["name"])
+            base_info["emails"].append(response["commit"]["author"]["email"])
+            base_info["commits"].append(commit)
+
+        return head_info, base_info
+
+    except Exception:
+        exc_type, exc_val, exc_tb = sys.exc_info()
+        traceback.print_exception(exc_type, exc_val, exc_tb)
+        sys.exit(1)
+
+
+build_timestamp = get_build_timestamp()
+conflicting_filepaths = get_conflicting_filepaths()
+
 path = "/var/lib/jenkins/workspace/auto_merge_github_branches/"
 os.chdir(path)
 subprocess.call(["git", "checkout", "origin/test_branch_20"])
 subprocess.call(["git", "merge", "origin/master"])
-p = subprocess.Popen(["git", "diff"], stdout=subprocess.PIPE)
-diff_output, err = p.communicate()
-print "diff"
-print diff_output
+head_author_names = []
+base_author_names = []
+head_emails = []
+base_emails = []
+for filepath in conflicting_filepaths:
+    p = subprocess.Popen(["git", "annotate", filepath], stdout=subprocess.PIPE)
+    annotated_info, err = p.communicate()
+    head_commits, base_commits = parse_diff_output(annotated_info)
+    head_info, base_info = get_commit_authors(head_commits, base_commits)
 
-diff_file_path = os.path.join(JENKINS_HOME, "jobs", JOB_NAME, "diff.html")
-diff_html_file = open(diff_file_path, "w+")
-diff_html_file.write("<h3>DIFF</h3>\n")
-diff_html_file.write(diff_output)
-diff_html_file.close()
-
-build_timestamp = get_build_timestamp()
-conflicting_filepaths = get_conflicting_filepaths()
 
 print "branch: {}".format(BRANCH_NAME)
 print "build_timestamp: {}".format(build_timestamp)
