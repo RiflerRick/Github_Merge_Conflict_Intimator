@@ -163,3 +163,5 @@ Initially I was of the impression that the hunk portion in the diff actually cou
 Although it is essentially a line by line comparison the idea would be that if a line is added by someone, is it removed by the other guy and vice versa, if so there is a merge conflict, if not its okay. This is a complicated problem when it comes to literally checking patch by patch. The current agorithm follows that for a given patch, we check the hunk of the patch, the number of lines that are inserted and the number of lines deleted. 
 
 **NOTE**: There will be no way of actually giving a clue as to who are the actual culprits of the conflict. The best we can do is give a probable set of commit authors whose commits conflict and a list of all authors who committed in the file where the conflict happened.
+
+One important idea here is the git blame command. git blame is actually used to show who are the people who committed at any point in the file. It is amazingly effective and if we can parse the git blame command on the file itself. Thats it. We will be there.
