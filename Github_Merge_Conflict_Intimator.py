@@ -498,7 +498,7 @@ def get_commit_authors(head_commits, base_commits):
         sys.exit(1)
 
 
-path = "/var/lib/jenkins/workspace/auto_merge_github_branches/"
+path = os.path.join(JENKINS_HOME, "jobs", JOB_NAME, "workspace")
 os.chdir(path)
 
 subprocess.call(["git", "checkout", "origin/" + BRANCH_NAME])
