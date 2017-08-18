@@ -21,13 +21,14 @@ HEAD_BRANCH = "master"
 PAT_TOKEN = github_pat_token.PAT_TOKEN
 
 assert PAT_TOKEN
-#print len(sys.argv)
-assert len(sys.argv) == 5
+assert len(sys.argv) == 7
 
 JENKINS_HOME = sys.argv[1]
 JOB_NAME = sys.argv[2]
 BRANCH_NAME = sys.argv[3]
 GMCI_HOME = sys.argv[4]
+EMAIL_FILEPATH = sys.argv[5]
+MERGE_DIFF_FILEPATH = sys.argv[6]
 
 # -----------------------------------REPOSITORY CONFIGs------------------------------------
 OWNER_NAME = "RiflerRick"
@@ -415,35 +416,58 @@ def update_email_content(head_names_set, head_emails_set, base_names_set, base_e
                                                                                  ' no-repeat;'
             ' background-position: center center; background-attachment: fixed;}</style>')
     f.write('<body background="' + background_image_filepath + '"><br><h2>Merge Failed</h2>')
-    f.write('<p style="color:blue">The following people are causing merge conflicts</p>')
-    f.write('<b style="color:red">Incoming:</b>')
+    f.write('<p>An attempted merge from <font color="red"><b>' + HEAD_BRANCH + '</b></font> to <font'
+            ' color="red"><b>' + BRANCH_NAME + '</b></font> in the repository <font color="red"><b>'+
+            REPO_NAME +'</b></font> failed due to the following reason:' )
+    f.write('<p>The following people are causing merge conflicts</p>')
+    f.write('<h3 style="color:red">Incoming: <font color="blue">(' + HEAD_BRANCH + ')</font></h3>')
     author_names = ""
     for name in head_names_set:
         author_names = author_names + name + ", "
     f.write('<p>' + author_names + '</p>')
 
-    f.write('<b style="color:red">Current:</b>')
+    f.write('<h3 style="color:red">Current: <font color="blue">(' + BRANCH_NAME + ')</font></h3>')
     author_names = ""
     for name in base_names_set:
         author_names = author_names + name + ", "
     f.write('<p>' + author_names + '</p>')
 
-    f.write('<p style="color:blue">for the following commits:</p>')
-    f.write('<b style="color:red">Incoming:</b>')
+    f.write('<p>for the following commits:</p>')
+    f.write('<h3 style="color:red">Incoming: <font color="blue">(' + HEAD_BRANCH + ')</font></h3>')
     author_commits = ""
     for commit in head_info["commits"]:
         url = os.path.join(generic_commit_url, commit)
         author_commits = author_commits + wrap_html_anchor_tag(commit, url) + ", "
     f.write('<p>' + author_commits + '</p>')
 
-    f.write('<b style="color:red">Current:</b>')
+    f.write('<h3 style="color:red">Current: <font color="blue">(' + BRANCH_NAME + ')</font></h3>')
     author_commits = ""
     for commit in base_info["commits"]:
         url = os.path.join(generic_commit_url, commit)
         author_commits = author_commits + wrap_html_anchor_tag(commit, url) + ", "
     f.write('<p>' + author_commits + '</p>')
 
-    f.write('</body><b>Diff</b><br><br>')
+    f.write('</body><b>Merge Conflict Diff</b><br><br>')
+
+
+def update_recipient_list(head_emails_set, base_emails_set):
+    """
+    update the recipient list in emails file present in $JENKINS_HOME/jobs/$JOB_NAME
+
+    :param head_info:
+    :param base_info:
+    :return:
+    """
+    path = EMAIL_FILEPATH
+    f = open(path, "w")
+    all_emails = ""
+    for email in head_emails_set:
+        all_emails += email + ", "
+
+    for email in base_emails_set:
+        all_emails += email + ", "
+
+    f.write(all_emails)
 
 
 def get_commit_authors(head_commits, base_commits):
@@ -504,12 +528,12 @@ print "conflicting_filepath: {}".format(str(conflicting_filepaths))
 
 path = "/var/lib/jenkins/workspace/auto_merge_github_branches/"
 os.chdir(path)
-subprocess.call(["git", "checkout", "origin/test_branch_20"])
-subprocess.call(["git", "merge", "origin/master"])
+subprocess.call(["git", "checkout", "origin/" + BRANCH_NAME])
+subprocess.call(["git", "merge", "origin/" + HEAD_BRANCH])
 diff = subprocess.Popen(["git", "diff"], stdout=subprocess.PIPE)
 diff_output, err = diff.communicate()
 
-diff_output_filepath = os.path.join(JENKINS_HOME, "jobs", JOB_NAME, "diff.html")
+diff_output_filepath = MERGE_DIFF_FILEPATH
 f = open(diff_output_filepath, "w+")
 f.write('<textarea rows="30" cols="70" disabled="false" style="background-color:black; color:white;">\n')
 f.write(diff_output)
@@ -569,5 +593,6 @@ for email in base_info["emails"]:
     base_emails_set.add(email)
 
 update_properties(all_authors, head_info, base_info)
+update_recipient_list (head_emails_set, base_emails_set)
 update_email_content(head_names_set, head_emails_set, base_names_set, base_emails_set, head_info,
                      base_info)
