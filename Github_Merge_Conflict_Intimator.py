@@ -1,10 +1,12 @@
 #! /home/rajdeep/.virtualenvs/githubMCI/bin/python
 """
-The script will be taking 4 command line arguments:
+The script will be taking 6 command line arguments:
 - $JENKINS_HOME: This environment variable will simply provide the path of the jenkins home
 - $JOB_NAME: This envionrment variable will provide job name of jenkins
 - Name of the branch: The branch name for which to list commits
 - $GMCI_HOME: This environment variable will provide the file path for the gmci properties file defined in jenkins job configuration
+- email filepath
+- diff filepath
 """
 
 import dateutil.parser as dtparser, datetime
