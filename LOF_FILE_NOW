@@ -1,0 +1,66 @@
+Started by user [8mha:////4CxyjKA0rWLHAzNAfhAvAyFYQYwgbZT29Hq3ZlpbzSguAAAAmR+LCAAAAAAAAP9b85aBtbiIQTGjNKU4P08vOT+vOD8nVc83PyU1x6OyILUoJzMv2y+/JJUBAhiZGBgqihhk0NSjKDWzXb3RdlLBUSYGJk8GtpzUvPSSDB8G5tKinBIGIZ+sxLJE/ZzEvHT94JKizLx0a6BxUmjGOUNodHsLgAzBEgZe/dLi1CL9osSslNTUAgCPz+PCwgAAAA==[0mRajdeep Mukherjee
+[EnvInject] - Loading node environment variables.
+[EnvInject] - Preparing an environment for the build.
+[EnvInject] - Keeping Jenkins system variables.
+[EnvInject] - Keeping Jenkins build variables.
+[EnvInject] - Injecting as environment variables the properties file path '/var/lib/jenkins/jobs/auto_merge_github_branches/gmci.properties'
+[EnvInject] - Variables injected successfully.
+[EnvInject] - Injecting contributions.
+Building in workspace /var/lib/jenkins/workspace/auto_merge_github_branches
+ > git rev-parse --is-inside-work-tree # timeout=10
+Fetching changes from the remote Git repository
+ > git config remote.origin.url https://github.com/RiflerRick/BB_MCS_Test.git # timeout=10
+Fetching upstream changes from https://github.com/RiflerRick/BB_MCS_Test.git
+ > git --version # timeout=10
+using GIT_ASKPASS to set credentials github username and password
+ > git fetch --tags --progress https://github.com/RiflerRick/BB_MCS_Test.git +refs/heads/*:refs/remotes/origin/*
+ > git rev-parse origin/master^{commit} # timeout=10
+Merging Revision 7c15c87444ffcad9b7c50fc6ac1ab422e5609393 (origin/master) to origin/test_branch_20, UserMergeOptions{mergeRemote='origin', mergeTarget='test_branch_20', mergeStrategy='resolve', fastForwardMode='--ff'}
+ > git rev-parse origin/test_branch_20^{commit} # timeout=10
+ > git config core.sparsecheckout # timeout=10
+ > git checkout -f origin/test_branch_20
+ > git merge -s resolve --ff 7c15c87444ffcad9b7c50fc6ac1ab422e5609393 # timeout=10
+ > git config core.sparsecheckout # timeout=10
+ > git checkout -f 7c15c87444ffcad9b7c50fc6ac1ab422e5609393
+ERROR: Branch not suitable for integration as it does not merge cleanly: Command "git merge -s resolve --ff 7c15c87444ffcad9b7c50fc6ac1ab422e5609393" returned status code 1:
+stdout: Trying really trivial in-index merge...
+Nope.
+Trying simple merge.
+Simple merge failed, trying Automatic merge.
+Auto-merging helloworld
+Auto-merging new_file_1
+Automatic merge failed; fix conflicts and then commit the result.
+
+stderr: error: Merge requires file-level merging
+ERROR: content conflict in helloworld
+ERROR: content conflict in new_file_1
+fatal: merge program failed
+
+[8mha:////4IXKQsvlOU+NXN+uSN6TpZ07u/MeoL8ptS9FgeDRVmV2AAAAVx+LCAAAAAAAAP9b85aBtbiIQSmjNKU4P08vOT+vOD8nVc8DzHWtSE4tKMnMz/PLL0mV3NWzufebKBsTA0NFEYMUmgZnCA1SyAABjCCFBQC2xNaiYAAAAA==[0mPerforming Post build task...
+Match found for :ERROR: Branch not suitable for integration as it does not merge cleanly : True
+Logical operation result is TRUE
+Running script  : cd $JENKINS_HOME/jobs/$JOB_NAME
+./Github_Merge_Conflict_Intimator.py $JENKINS_HOME $JOB_NAME $branch_to_merge_to $gmci_home $email_filepath $git_diff_html_filepath
+[auto_merge_github_branches] $ /bin/sh -xe /tmp/jenkins2995372104762533636.sh
++ cd /var/lib/jenkins/jobs/auto_merge_github_branches
++ ./Github_Merge_Conflict_Intimator.py /var/lib/jenkins auto_merge_github_branches test_branch_20 /var/lib/jenkins/jobs/auto_merge_github_branches/gmci.properties /var/lib/jenkins/jobs/auto_merge_github_branches/culprit_emails /var/lib/jenkins/jobs/auto_merge_github_branches/diff.html
+Traceback (most recent call last):
+  File "./Github_Merge_Conflict_Intimator.py", line 72, in get_conflicting_filepaths
+    f = open("/home/bigbasket/Desktop/Github_Merge_Conflict_Intimator/LOF_FILE_NOW", "w")
+IOError: [Errno 13] Permission denied: '/home/bigbasket/Desktop/Github_Merge_Conflict_Intimator/LOF_FILE_NOW'
+return build timestamp: 2017-08-18T14:13:10+0530
+POST BUILD TASK : FAILURE
+END OF POST BUILD TASK : 0
+Build did not succeed and the project is configured to only push after a successful build, so no pushing will occur.
+Checking for post-build
+Performing post-build step
+Checking if email needs to be generated
+Email was triggered for: Failure - Any
+Sending email for trigger: Failure - Any
+messageContentType = text/html; charset=UTF-8
+Adding recipients from trigger recipient list
+Setting In-Reply-To since last build was not successful
+Successfully created MimeMessage
+Sending email to: rajdeepmukhrj@gmail.com rajdeep.mukherjee295@gmail.com
+Finished: FAILURE
+65

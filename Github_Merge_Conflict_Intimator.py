@@ -1,4 +1,4 @@
-#! /home/bigbasket/.virtualenvs/githubMCI/bin/python
+#! /home/rajdeep/.virtualenvs/githubMCI/bin/python
 """
 The script will be taking 4 command line arguments:
 - $JENKINS_HOME: This environment variable will simply provide the path of the jenkins home
@@ -6,7 +6,7 @@ The script will be taking 4 command line arguments:
 - Name of the branch: The branch name for which to list commits
 - $GMCI_HOME: This environment variable will provide the file path for the gmci properties file defined in jenkins job configuration
 """
-import github_pat_token
+
 import dateutil.parser as dtparser, datetime
 import sys
 import os
@@ -18,7 +18,7 @@ import subprocess
 from unidiff import PatchSet
 
 HEAD_BRANCH = "master"
-PAT_TOKEN = github_pat_token.PAT_TOKEN
+PAT_TOKEN = os.environ["PAT_TOKEN"]
 
 assert PAT_TOKEN
 assert len(sys.argv) == 7
@@ -31,35 +31,15 @@ EMAIL_FILEPATH = sys.argv[5]
 MERGE_DIFF_FILEPATH = sys.argv[6]
 
 # -----------------------------------REPOSITORY CONFIGs------------------------------------
-OWNER_NAME = "RiflerRick"
-REPO_NAME = "BB_MCS_Test"
+OWNER_NAME = "BigBasket"
+REPO_NAME = "BigBasket"
 
 LOG_FILE_PATH = os.path.join(JENKINS_HOME, "jobs", JOB_NAME, "builds", "lastFailedBuild", "log")
 GMCI_FILE_PATH = GMCI_HOME
 ERROR_LINE_REGEX = "ERROR: content conflict"
 
 
-def get_build_timestamp():
-    """
-    get the build timestamp from the properties file
-
-    :return: build_timestamp
-    """
-    config = configparser.ConfigParser()
-    try:
-        config.read(GMCI_HOME)
-        build_timestamp_key = config[u"LAST_SUCCESSFUL_BUILD_TIMESTAMP"].keys()[0]
-    except Exception:
-        exc_type, exc_val, exc_tb = sys.exc_info()
-        traceback.print_exception(exc_type, exc_val, exc_tb)
-        # this is essential so that
-        sys.exit(1)
-
-    print "return build timestamp: {}".format(config[u"LAST_SUCCESSFUL_BUILD_TIMESTAMP"][build_timestamp_key])
-    return config[u"LAST_SUCCESSFUL_BUILD_TIMESTAMP"][build_timestamp_key]
-
-
-def get_conflicting_filepaths():
+def get_conflicting_filepaths(diff_output):
     """
     get the filepath of the conflicting file from the console log file of jenkins
 
@@ -67,13 +47,11 @@ def get_conflicting_filepaths():
     """
     filepaths = []
     try:
-        file = open(LOG_FILE_PATH, "r")
-        error_line = ""
-        for line in file:
-            if re.match(ERROR_LINE_REGEX, line):
-                error_line = line
-                filepaths.append(error_line.split(' ')[-1][:-1])
-
+        lines = diff_output.split("\n")
+        for line in lines:
+            tokens = line.split(" ")
+            if tokens[0] == "diff":
+                filepaths.append(str(tokens[2]))
 
     except Exception:
         exc_type, exc_val, exc_tb = sys.exc_info()
@@ -385,6 +363,7 @@ def parse_diff_output(annotated_info):
     print head_conflict_commits
     print "base commits------------------------------------------------------"
     print base_conflict_commits
+
     return head_conflict_commits, base_conflict_commits
 
 
@@ -519,19 +498,22 @@ def get_commit_authors(head_commits, base_commits):
         sys.exit(1)
 
 
-build_timestamp = get_build_timestamp()
-conflicting_filepaths = get_conflicting_filepaths()
-
-print "branch: {}".format(BRANCH_NAME)
-print "build_timestamp: {}".format(build_timestamp)
-print "conflicting_filepath: {}".format(str(conflicting_filepaths))
-
 path = "/var/lib/jenkins/workspace/auto_merge_github_branches/"
 os.chdir(path)
+
 subprocess.call(["git", "checkout", "origin/" + BRANCH_NAME])
 subprocess.call(["git", "merge", "origin/" + HEAD_BRANCH])
 diff = subprocess.Popen(["git", "diff"], stdout=subprocess.PIPE)
 diff_output, err = diff.communicate()
+
+if diff_output != "":
+    conflicting_filepaths = get_conflicting_filepaths(diff_output)
+else:
+    print "No diff found. Unable to find out reason for conflict"
+    sys.exit(1)
+
+print "branch: {}".format(BRANCH_NAME)
+print "conflicting_filepath: {}".format(str(conflicting_filepaths))
 
 diff_output_filepath = MERGE_DIFF_FILEPATH
 f = open(diff_output_filepath, "w+")
