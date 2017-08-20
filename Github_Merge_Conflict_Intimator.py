@@ -19,7 +19,7 @@ import requests, urllib2
 import subprocess
 from unidiff import PatchSet
 
-HEAD_BRANCH = "master"
+HEAD_BRANCH = "prodstable"
 PAT_TOKEN = os.environ["PAT_TOKEN"]
 
 assert PAT_TOKEN
@@ -47,13 +47,11 @@ def get_conflicting_filepaths(diff_output):
 
     :return:
     """
-    filepaths = []
     try:
-        lines = diff_output.split("\n")
-        for line in lines:
-            tokens = line.split(" ")
-            if tokens[0] == "diff":
-                filepaths.append(str(tokens[2]))
+        filepaths = set()
+        diff_lines = diff_output.split("\n")
+        for line in diff_lines:
+            filepaths.add(line)
 
     except Exception:
         exc_type, exc_val, exc_tb = sys.exc_info()
@@ -505,17 +503,20 @@ os.chdir(path)
 
 subprocess.call(["git", "checkout", "origin/" + BRANCH_NAME])
 subprocess.call(["git", "merge", "origin/" + HEAD_BRANCH])
-diff = subprocess.Popen(["git", "diff"], stdout=subprocess.PIPE)
-diff_output, err = diff.communicate()
+diff_file_only = subprocess.Popen(["git", "diff", "--name-only"], stdout=subprocess.PIPE)
+diff_output_file_only, err = diff_file_only.communicate()
 
-if diff_output != "":
-    conflicting_filepaths = get_conflicting_filepaths(diff_output)
+if diff_output_file_only != "":
+    conflicting_filepaths = get_conflicting_filepaths(diff_output_file_only)
 else:
     print "No diff found. Unable to find out reason for conflict"
     sys.exit(1)
 
 print "branch: {}".format(BRANCH_NAME)
 print "conflicting_filepath: {}".format(str(conflicting_filepaths))
+
+diff = subprocess.Popen(["git", "diff"], stdout=subprocess.PIPE)
+diff_output, err = diff.communicate()
 
 diff_output_filepath = MERGE_DIFF_FILEPATH
 f = open(diff_output_filepath, "w+")
