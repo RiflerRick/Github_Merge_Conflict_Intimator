@@ -16,22 +16,22 @@ import configparser
 import requests
 import subprocess
 
-HEAD_BRANCH = "prodstable"
 PAT_TOKEN = os.environ["PAT_TOKEN"]
 
 assert PAT_TOKEN
-assert len(sys.argv) == 7
+assert len(sys.argv) == 9
 
 JENKINS_HOME = sys.argv[1]
 JOB_NAME = sys.argv[2]
-BRANCH_NAME = sys.argv[3]
-GMCI_HOME = sys.argv[4]
-EMAIL_FILEPATH = sys.argv[5]
-MERGE_DIFF_FILEPATH = sys.argv[6]
+GMCI_HOME = sys.argv[3]
+EMAIL_FILEPATH = sys.argv[4]
+MERGE_DIFF_FILEPATH = sys.argv[5]
+HEAD_BRANCH = sys.argv[6]
+BRANCH_NAME = sys.argv[7]
 
 # -----------------------------------REPOSITORY CONFIGs------------------------------------
 OWNER_NAME = "BigBasket"
-REPO_NAME = "BigBasket"
+REPO_NAME = sys.argv[8]
 
 LOG_FILE_PATH = os.path.join(JENKINS_HOME, "jobs", JOB_NAME, "builds", "lastFailedBuild", "log")
 GMCI_FILE_PATH = GMCI_HOME
@@ -69,128 +69,6 @@ def wrap_html_anchor_tag(value, url):
     """
     value = '<a href="' + url + '">' + value + '</a>'
     return value
-
-
-def update_properties(all_authors, head_info, base_info):
-    """
-    update the gmci properties file
-    The properties to be updated are the following:
-    [CULPRITS]
-    HEAD_BRANCH_CULPRIT_NAME=""
-    HEAD_BRANCH_CULPRIT_EMAIL=""
-    BASE_BRANCH_CULPRIT_NAME=""
-    BASE_BRANCH_CULPRIT_EMAIL=""
-    HEAD_BRANCH_ALL_CULPRITS_NAMES=""
-    HEAD_BRANCH_ALL_CULPRITS_EMAILS=""
-    BASE_BRANCH_ALL_CULPRITS_NAMES=""
-    BASE_BRANCH_ALL_CULPRITS_EMAILS=""
-
-    The structure of the head_info and base_info parameters are:
-    head_info = {
-        "names" : [],
-        "emails" : [],
-        "commits" : []
-    }
-    base_info = {
-        "names" : [],
-        "emails" : [],
-        "commits" : []
-    }
-
-    :param all_authors:
-    :param conflicting_authors:
-    :param head_info: info on conflicting commits in head
-    :param base_info: info on conflicting commits in base
-    :return:
-    """
-    head_all_authors = all_authors["head"]
-    base_all_authors = all_authors["base"]
-    generic_commit_url = os.path.join("https://github.com", OWNER_NAME, REPO_NAME, "commit")
-
-    try:
-        config = configparser.ConfigParser()
-        config.read(GMCI_HOME)
-        # initializing all values
-        config.set(u"CULPRITS", "HEAD_BRANCH_CULPRIT_EMAILS", "")
-        config.set(u"CULPRITS", "HEAD_BRANCH_CULPRIT_NAMES", "")
-        config.set(u"CULPRITS", "HEAD_BRANCH_CULPRIT_COMMITS", "")
-
-        config.set(u"CULPRITS", "BASE_BRANCH_CULPRIT_NAMES", "")
-        config.set(u"CULPRITS", "BASE_BRANCH_CULPRIT_EMAILS", "")
-        config.set(u"CULPRITS", "BASE_BRANCH_CULPRIT_COMMITS", "")
-
-        config.set(u"CULPRITS", "HEAD_BRANCH_ALL_CULPRITS_NAMES", "")
-        config.set(u"CULPRITS", "HEAD_BRANCH_ALL_CULPRITS_EMAILS", "")
-
-        config.set(u"CULPRITS", "BASE_BRANCH_ALL_CULPRITS_NAMES", "")
-        config.set(u"CULPRITS", "BASE_BRANCH_ALL_CULPRITS_EMAILS", "")
-
-
-        # if conflicting_authors["head_commit"] != ():
-        head_author_names = ""
-        head_author_emails = ""
-        head_author_commits = ""
-
-        base_author_names = ""
-        base_author_emails = ""
-        base_author_commits = ""
-
-        # -----------HEAD---------------------------------------------
-        for name in head_info["names"]:
-            head_author_names = head_author_names + name + ", "
-
-        for email in head_info["emails"]:
-            head_author_emails = head_author_emails + email + ", "
-
-        for commit in head_info["commits"]:
-            url = os.path.join(generic_commit_url, commit)
-            head_author_commits = head_author_commits + wrap_html_anchor_tag(commit, url) + ", "
-
-        # ------------BASE---------------------------------------------
-        for name in base_info["names"]:
-            base_author_names = base_author_names + name + ", "
-
-        for email in base_info["emails"]:
-            base_author_emails = base_author_emails + email + ", "
-
-        for commit in base_info["commits"]:
-            url = os.path.join(generic_commit_url, commit)
-            base_author_commits = base_author_commits + wrap_html_anchor_tag(commit, url) + ", "
-
-        config.set(u"CULPRITS", "HEAD_BRANCH_CULPRIT_NAMES", head_author_names)
-        config.set(u"CULPRITS", "HEAD_BRANCH_CULPRIT_EMAILS", head_author_emails)
-        config.set(u"CULPRITS", "HEAD_BRANCH_CULPRIT_COMMITS", head_author_commits)
-
-        config.set(u"CULPRITS", "BASE_BRANCH_CULPRIT_NAMES", base_author_names)
-        config.set(u"CULPRITS", "BASE_BRANCH_CULPRIT_EMAILS", base_author_emails)
-        config.set(u"CULPRITS", "BASE_BRANCH_CULPRIT_COMMITS", base_author_commits)
-
-        val_1 = ""
-        val_2 = ""
-        for author in head_all_authors:
-            val_1 = val_1 + author[0] + ", "
-            val_2 = val_2 + author[1] + ", "
-
-        config.set(u"CULPRITS", "HEAD_BRANCH_ALL_CULPRITS_NAMES", val_1)
-        config.set(u"CULPRITS", "HEAD_BRANCH_ALL_CULPRITS_EMAILS", val_2)
-
-        val_1 = ""
-        val_2 = ""
-        for author in base_all_authors:
-            val_1 = val_1 + author[0] + ", "
-            val_2 = val_2 + author[1] + ", "
-
-        config.set(u"CULPRITS", "BASE_BRANCH_ALL_CULPRITS_NAMES", val_1)
-        config.set(u"CULPRITS", "BASE_BRANCH_ALL_CULPRITS_EMAILS", val_2)
-
-        f = open(GMCI_HOME, 'w')
-        config.write(f)
-        f.close()
-
-    except Exception:
-        exc_type, exc_val, exc_tb = sys.exc_info()
-        traceback.print_exception(exc_type, exc_val, exc_tb)
-        sys.exit(1)
 
 
 def parse_diff_output(annotated_info):
@@ -420,7 +298,6 @@ for email in head_info["emails"]:
 for email in base_info["emails"]:
     base_emails_set.add(email)
 
-update_properties(all_authors, head_info, base_info)
 update_recipient_list (head_emails_set, base_emails_set)
 update_email_content(head_names_set, head_emails_set, base_names_set, base_emails_set, head_info,
                      base_info)
