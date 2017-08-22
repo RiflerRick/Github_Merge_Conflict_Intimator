@@ -359,10 +359,10 @@ def parse_diff_output(annotated_info):
             # head found
             head_conflict_commits.append(commit)
 
-    print "head_commits------------------------------------------------------"
-    print head_conflict_commits
-    print "base commits------------------------------------------------------"
-    print base_conflict_commits
+    # print "head_commits------------------------------------------------------"
+    # print head_conflict_commits
+    # print "base commits------------------------------------------------------"
+    # print base_conflict_commits
 
     return head_conflict_commits, base_conflict_commits
 
