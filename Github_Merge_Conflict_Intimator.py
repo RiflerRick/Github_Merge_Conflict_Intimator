@@ -136,7 +136,7 @@ def update_email_content(head_names_set, head_emails_set, base_names_set, base_e
             ' color="red"><b>' + BRANCH_NAME + '</b></font> in the repository <font color="red"><b>'+
             REPO_NAME +'</b></font> failed due to the following reason:' )
     f.write('<p>The following people are causing merge conflicts</p>')
-    f.write('<h3 style="color:red">Incoming: <font color="blue">(' + HEAD_BRANCH + ')</font></h3>')
+    f.write('<h3 style="color:red">Incoming:<font color="blue"> (' + HEAD_BRANCH + ')</font></h3>')
     author_names = ""
     for name in head_names_set:
         author_names = author_names + name + ", "
